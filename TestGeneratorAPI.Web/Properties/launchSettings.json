@@ -14,7 +14,7 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "swagger",
-      "applicationUrl": "http://localhost:5255",
+      "applicationUrl": "http://localhost:3000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "TOKEN_SECRET": "tjrh45rtyjuht54ruty45ufkfjhtr5yut6ioyj7809l9iuytrewaqe2wrdtfyuhjygtfdewrtyuihjgtfdertygujhgtfhjkbhjuijkbvgyuijkhgvftyfdedxxserftrse4r5tfdr5t6ygvftyu8ijhu8i9okjnhui90okjhu8i9jhgfrde3w2qawsdftgyui90kmnjhbgvfcdxswe4r5t6y7u8ikomnjhbgvfcder5t6"

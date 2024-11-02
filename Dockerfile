@@ -24,4 +24,3 @@ RUN dotnet publish "TestGeneratorAPI.Web.csproj" -c Release -o /app/publish /p:U
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "TestGeneratorAPI.Web.dll"]
