@@ -52,7 +52,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddDbContext<TestGeneratorDbContext>(
-    options => { options.UseNpgsql(builder.Configuration.GetConnectionString(nameof(TestGeneratorDbContext))); });
+    options => options.UseNpgsql(Environment.GetEnvironmentVariable("DB_CONTEXT")));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
