@@ -128,6 +128,7 @@ public class PluginReleasesRepository : IPluginReleasesRepository
             Version = Version.Parse(entity.Version),
             CreatedAt = entity.CreatedAt,
             DeletedAt = entity.DeletedAt,
+            Url = entity.Url,
         };
     }
 
