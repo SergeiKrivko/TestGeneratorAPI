@@ -84,8 +84,8 @@ public class PluginReleasesController : ControllerBase
     [ProducesResponseType(typeof(ResponseSchema<PluginReleaseRead>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ResponseSchema<PluginReleaseRead>>> GetLatestRelease(
-        [FromHeader] [Required] string key,
-        [FromHeader] [Required] string runtime)
+        [FromQuery] [Required] string key,
+        [FromQuery] [Required] string runtime)
     {
         try
         {
