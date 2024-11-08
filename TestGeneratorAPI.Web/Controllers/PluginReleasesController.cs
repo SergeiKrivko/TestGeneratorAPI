@@ -47,12 +47,19 @@ public class PluginReleasesController : ControllerBase
                 JsonSerializer.Deserialize<Guid[]>(User.Claims.Where(c => c.Type == "Plugins").Single().Value);
             var plugin = await _pluginsService.GetPluginByKey(request.Key);
 
-            Console.WriteLine(pluginIds?[0]);
-
             if (!pluginIds?.Contains(plugin.PluginId) == true)
             {
                 return StatusCode(StatusCodes.Status401Unauthorized, new { error = "Permission denied" });
             }
+
+            if (await _pluginReleasesService.PluginReleaseExists(plugin.PluginId, request.Version, request.Runtime))
+                return StatusCode(StatusCodes.Status403Forbidden,
+                    new
+                    {
+                        error = "Already exists",
+                        detail = $"Release of this plugin with version '{request.Version}' " +
+                                 $"and runtime {request.Runtime} already exists"
+                    });
 
             var id = await _pluginReleasesService.CreatePluginRelease(request, userId);
 
@@ -64,26 +71,27 @@ public class PluginReleasesController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return StatusCode(StatusCodes.Status400BadRequest, new { error = ex.Message });
+            return StatusCode(StatusCodes.Status400BadRequest, new { error = "Bad request", detail = ex.Message });
         }
         catch (Exception ex)
         {
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new { error = "Error in method CreatePluginRelease", details = ex.Message });
+                new { error = "Internal Server Error", detail = ex.Message });
         }
     }
 
     [HttpGet("latest")]
     [ProducesResponseType(typeof(ResponseSchema<PluginReleaseRead>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ResponseSchema<PluginReleaseRead>>> GetLatestRelease([FromHeader] [Required] string key,
+    public async Task<ActionResult<ResponseSchema<PluginReleaseRead>>> GetLatestRelease(
+        [FromHeader] [Required] string key,
         [FromHeader] [Required] string runtime)
     {
         try
         {
             var plugin = await _pluginsService.GetPluginByKey(key);
             var release = await _pluginReleasesService.GetLatestRelease(plugin.PluginId, runtime);
-            
+
             return Ok(new ResponseSchema<PluginReleaseRead>
             {
                 Data = release,

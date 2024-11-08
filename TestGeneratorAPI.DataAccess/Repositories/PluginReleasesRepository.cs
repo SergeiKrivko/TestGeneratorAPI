@@ -35,7 +35,8 @@ public class PluginReleasesRepository : IPluginReleasesRepository
         try
         {
             var entity = await _dbContext.PluginReleases
-                .Where(e => e.PluginId == pluginId && (e.Runtime == runtime || e.Runtime == null) && e.DeletedAt == null)
+                .Where(e => e.PluginId == pluginId && (e.Runtime == runtime || e.Runtime == null) &&
+                            e.DeletedAt == null)
                 .OrderBy(p => p.Version).LastAsync();
             return Convert(entity);
         }
@@ -97,6 +98,38 @@ public class PluginReleasesRepository : IPluginReleasesRepository
         catch (Exception e)
         {
             throw new PluginReleasesRepositoryException("Failed to create plugin release", e);
+        }
+    }
+
+    public async Task<PluginReleaseRead> GetByVersion(Guid pluginId, string? runtime, Version version)
+    {
+        try
+        {
+            var entity = await _dbContext.PluginReleases
+                .Where(e => e.PluginId == pluginId && (e.Runtime == runtime || e.Runtime == null) &&
+                            e.DeletedAt == null && e.Version == version.ToString())
+                .OrderBy(p => p.Runtime).LastAsync();
+            return Convert(entity);
+        }
+        catch (Exception e)
+        {
+            throw new PluginReleasesRepositoryException($"Failed to get release '{version}' of plugin {pluginId} {e}", e);
+        }
+    }
+
+    public async Task<bool> ExistsByVersion(Guid pluginId, string? runtime, Version version)
+    {
+        try
+        {
+            var entity = await _dbContext.PluginReleases
+                .Where(e => e.PluginId == pluginId && (e.Runtime == runtime) &&
+                            e.DeletedAt == null && e.Version == version.ToString())
+                .OrderBy(p => p.Runtime).LastAsync();
+            return true;
+        }
+        catch (Exception e)
+        {
+            return false;
         }
     }
 

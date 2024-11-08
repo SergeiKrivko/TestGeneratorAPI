@@ -9,6 +9,10 @@ public interface IPluginReleasesRepository
     Task<List<PluginReleaseRead>> GetAll(Guid pluginId, string runtime);
 
     Task<PluginReleaseRead> Get(Guid id);
+    
+    Task<PluginReleaseRead> GetByVersion(Guid id, string? runtime, Version version);
+    
+    Task<bool> ExistsByVersion(Guid id, string? runtime, Version version);
 
     Task<PluginReleaseRead> GetLatest(Guid pluginId, string runtime);
 

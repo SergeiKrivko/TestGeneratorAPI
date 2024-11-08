@@ -6,6 +6,10 @@ public interface IPluginReleasesService
 {
     Task<PluginReleaseRead> GetPluginRelease(Guid releaseId);
     
+    Task<PluginReleaseRead> GetPluginRelease(Guid pluginId, Version version, string? runtime = null);
+    
+    Task<bool> PluginReleaseExists(Guid pluginId, Version version, string? runtime = null);
+    
     Task<ICollection<PluginReleaseRead>> GetPluginReleases(Guid pluginId);
     
     Task<ICollection<PluginReleaseRead>> GetPluginReleases(Guid pluginId, string runtime);
