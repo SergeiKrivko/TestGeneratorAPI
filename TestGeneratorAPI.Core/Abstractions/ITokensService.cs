@@ -4,13 +4,17 @@ namespace TestGeneratorAPI.Core.Abstractions;
 
 public interface ITokensService
 {
-    Task<string> CreateToken(TokenCreate tokenCreate, Guid userId);
+    public Task<string> CreateToken(TokenCreate tokenCreate, Guid userId);
 
-    Task<bool> IsAlive(Guid id);
+    public Task<bool> IsAlive(Guid id);
 
-    // Task<UserRead> GetUser(Guid userId);
+    public Task<List<TokenRead>> GetTokensOfUser(Guid userId);
+
+    public Task<TokenRead> GetToken(Guid tokenId);
+    
+    public Task<Guid> DeleteToken(Guid tokenId);
 
     // Task<UserRead> UpdateUser(Guid userId, UserCreate user);
 
-    // Task DeleteUser(Guid userId);
+    
 }

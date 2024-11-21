@@ -4,7 +4,7 @@ namespace TestGeneratorAPI.Core.Abstractions;
 
 public interface ITokensRepository
 {
-    // Task<List<UserRead>> GetAll();
+    Task<List<TokenRead>> GetAll(Guid userId);
 
     Task<TokenRead> Get(Guid tokenId);
     
@@ -14,5 +14,5 @@ public interface ITokensRepository
 
     // Task<Guid> Update(Guid id, string passwordHash, string? name);
 
-    // Task<Guid> Delete(Guid userId);
+    Task<Guid> Delete(Guid tokenId);
 }

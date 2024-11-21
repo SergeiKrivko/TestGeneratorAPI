@@ -41,10 +41,10 @@ public class PluginReleasesController : ControllerBase
                 Console.WriteLine($"{claim.Type} {claim.Value}");
             }
 
-            var tokenId = Guid.Parse(User.Claims.Where(c => c.Type == "Id").Single().Value);
-            var userId = Guid.Parse(User.Claims.Where(c => c.Type == "UserId").Single().Value);
+            var tokenId = Guid.Parse(User.Claims.Single(c => c.Type == "Id").Value);
+            var userId = Guid.Parse(User.Claims.Single(c => c.Type == "UserId").Value);
             var pluginIds =
-                JsonSerializer.Deserialize<Guid[]>(User.Claims.Where(c => c.Type == "Plugins").Single().Value);
+                JsonSerializer.Deserialize<Guid[]>(User.Claims.Single(c => c.Type == "Plugins").Value);
             var plugin = await _pluginsService.GetPluginByKey(request.Key);
 
             if (!pluginIds?.Contains(plugin.PluginId) == true)

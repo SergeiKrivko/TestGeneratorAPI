@@ -65,6 +65,11 @@ public class TokensService : ITokensService
         }
     }
 
+    public async Task<List<TokenRead>> GetTokensOfUser(Guid userId)
+    {
+        return await _tokensRepository.GetAll(userId);
+    }
+
     public async Task<bool> IsAlive(Guid id)
     {
         try
@@ -76,5 +81,15 @@ public class TokensService : ITokensService
         {
             return false;
         }
+    }
+
+    public async Task<Guid> DeleteToken(Guid tokenId)
+    {
+        return await _tokensRepository.Delete(tokenId);
+    }
+
+    public Task<TokenRead> GetToken(Guid tokenId)
+    {
+        return _tokensRepository.Get(tokenId);
     }
 }

@@ -10,5 +10,5 @@ public class TokenEntity
 
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 
-    public DateTime? DeletedAt { get; init; } = null;
+    public DateTime? DeletedAt { get; set; } = null;
 }

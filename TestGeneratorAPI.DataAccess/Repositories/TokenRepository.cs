@@ -43,18 +43,37 @@ public class TokensRepository : ITokensRepository
         try
         {
             var entity = await _dbContext.Tokens.Where(e => e.TokenId == tokenId).SingleAsync();
-            return new TokenRead
-            {
-                TokenId = entity.TokenId,
-                Name = entity.Name,
-                UserId = entity.UserId,
-                CreatedAt = entity.CreatedAt,
-                DeletedAt = entity.DeletedAt,
-            };
+            return Convert(entity);
         }
         catch (Exception e)
         {
             throw new TokensRepositoryException("Failed to get token");
         }
+    }
+
+    private static TokenRead Convert(TokenEntity entity)
+    {
+        return new TokenRead
+        {
+            TokenId = entity.TokenId,
+            Name = entity.Name,
+            UserId = entity.UserId,
+            CreatedAt = entity.CreatedAt,
+            DeletedAt = entity.DeletedAt,
+        };
+    }
+
+    public Task<List<TokenRead>> GetAll(Guid userId)
+    {
+        return _dbContext.Tokens.Where(t => t.UserId == userId).Select(e => Convert(e)).ToListAsync();
+    }
+
+    public async Task<Guid> Delete(Guid tokenId)
+    {
+        var entity = await _dbContext.Tokens.Where(t => t.TokenId == tokenId).SingleAsync();
+        entity.DeletedAt = DateTime.UtcNow;
+        _dbContext.Tokens.Update(entity);
+        await _dbContext.SaveChangesAsync();
+        return tokenId;
     }
 }
