@@ -69,7 +69,39 @@ public class PluginsController : ControllerBase
             return Ok(new ResponseSchema<PluginRead[]>
             {
                 Data = plugins.ToArray(),
-                Detail = "Plugin was created."
+                Detail = "Plugins was selected."
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return StatusCode(StatusCodes.Status400BadRequest, new { error = ex.Message });
+        }
+        catch (PluginsServiceException e)
+        {
+            return StatusCode(StatusCodes.Status409Conflict, new { error = e.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { error = "Error in method CreatePlugin", details = ex.Message });
+        }
+    }
+
+    [HttpGet("my")]
+    [Authorize(AuthenticationSchemes = BasicDefaults.AuthenticationScheme)]
+    [ProducesResponseType(typeof(ResponseSchema<PluginRead[]>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ResponseSchema<PluginRead[]>>> GetUserPlugins()
+    {
+        try
+        {
+            var user = await _usersService.Get(User.Identity?.Name ?? "");
+            var plugins = await _pluginsService.GetUserPlugins(user.UserId);
+
+            return Ok(new ResponseSchema<PluginRead[]>
+            {
+                Data = plugins.ToArray(),
+                Detail = "Plugins was selected."
             });
         }
         catch (ArgumentException ex)

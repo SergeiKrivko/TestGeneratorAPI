@@ -28,6 +28,11 @@ public class PluginsService : IPluginsService
         return await _pluginsRepository.GetAll();
     }
 
+    public async Task<ICollection<PluginRead>> GetUserPlugins(Guid userId)
+    {
+        return await _pluginsRepository.GetAll(userId);
+    }
+
     public async Task<PluginRead> GetPlugin(Guid pluginId)
     {
         return await _pluginsRepository.Get(pluginId);

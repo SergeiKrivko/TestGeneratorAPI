@@ -7,6 +7,7 @@ public interface IPluginsService
     Task<PluginRead> GetPlugin(Guid pluginId);
     
     Task<ICollection<PluginRead>> GetAllPlugins();
+    Task<ICollection<PluginRead>> GetUserPlugins(Guid userId);
     
     Task<PluginRead> GetPluginByKey(string key);
     
