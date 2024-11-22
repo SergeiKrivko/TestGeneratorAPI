@@ -21,7 +21,7 @@ public class PluginReleasesRepository : IPluginReleasesRepository
         try
         {
             var entity = await _dbContext.PluginReleases
-                .Where(p => p.PluginReleaseId == pluginId).SingleAsync();
+                .Where(p => p.PluginReleaseId == pluginId && p.DeletedAt == null).SingleAsync();
             return Convert(entity);
         }
         catch (Exception e)

@@ -65,7 +65,7 @@ public class TokensRepository : ITokensRepository
 
     public Task<List<TokenRead>> GetAll(Guid userId)
     {
-        return _dbContext.Tokens.Where(t => t.UserId == userId).Select(e => Convert(e)).ToListAsync();
+        return _dbContext.Tokens.Where(t => t.UserId == userId && t.DeletedAt == null).Select(e => Convert(e)).ToListAsync();
     }
 
     public async Task<Guid> Delete(Guid tokenId)
