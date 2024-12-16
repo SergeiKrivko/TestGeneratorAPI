@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
-using System.Text.Json;
 using Microsoft.Extensions.FileSystemGlobbing;
 using TestGeneratorAPI.Core.Abstractions;
 using TestGeneratorAPI.Core.Enums;
@@ -15,7 +14,7 @@ public class TokensService : ITokensService
 {
     private readonly ITokensRepository _tokensRepository;
     private readonly IPluginsRepository _pluginsRepository;
-    private readonly IPluginReleasesRepository _pluginReleasesRepository;
+    private readonly IUsersRepository _usersRepository;
 
     public const string Issuer = "TesteneratorAPI";
     public const string Audience = "AccessToken";
@@ -26,11 +25,11 @@ public class TokensService : ITokensService
         new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Key));
 
     public TokensService(ITokensRepository tokensRepository, IPluginsRepository pluginsRepository,
-        IPluginReleasesRepository pluginReleasesRepository)
+        IUsersRepository usersRepository)
     {
         _tokensRepository = tokensRepository;
         _pluginsRepository = pluginsRepository;
-        _pluginReleasesRepository = pluginReleasesRepository;
+        _usersRepository = usersRepository;
     }
 
     public async Task<string> CreateToken(TokenCreate tokenCreate, Guid userId)
@@ -111,10 +110,12 @@ public class TokensService : ITokensService
         return _tokensRepository.Get(tokenId);
     }
 
-    public async Task<bool> CheckPermissions(ClaimsPrincipal claims, TokenPermission permission, Guid id)
+    public async Task<bool> CheckPermissions(ClaimsPrincipal claims, TokenPermission permission, object id)
     {
         try
         {
+            if (!claims.HasClaim(c => c.Type == "TokenId"))
+                return true;
             var tokenId = Guid.Parse(claims.Claims.Single(c => c.Type == "TokenId").Value);
             var userId = Guid.Parse(claims.Claims.Single(c => c.Type == "UserId").Value);
             var token = await GetToken(tokenId);
@@ -135,14 +136,18 @@ public class TokensService : ITokensService
                     return !permission.AdminOnly;
                 case TokenType.Mask:
                 {
-                    if (permission.Key != "createPlugin" && permission.Key != "createRelease" &&
+                    var matcher = new Matcher();
+                    matcher.AddInclude(claims.Claims.Single(c => c.Type == "Mask").Value);
+                    
+                    if (permission.Key == "createPlugin")
+                    {
+                        return matcher.Match((string)id).HasMatches;
+                    }
+                    if (permission.Key != "createRelease" &&
                         permission.Key != "removeRelease" && permission.Key != "removePlugin")
                         return false;
                     
-                    var matcher = new Matcher();
-                    matcher.AddInclude(claims.Claims.Single(c => c.Type == "Mask").Value);
-                    var plugin = await _pluginsRepository.Get(id);
-                    Console.WriteLine(string.Join(';', matcher.Match(plugin.Key)));
+                    var plugin = await _pluginsRepository.Get((Guid)id);
                     return matcher.Match(plugin.Key).HasMatches;
                 }
                 case TokenType.Plugins:
@@ -150,7 +155,7 @@ public class TokensService : ITokensService
                     if (permission.Key != "createRelease" && permission.Key != "removeRelease" &&
                         permission.Key != "removePlugin")
                         return false;
-                    var plugin = await _pluginsRepository.Get(id);
+                    var plugin = await _pluginsRepository.Get((Guid)id);
                     var pluginIds = claims.Claims.Single(c => c.Type == "Plugins").Value.Split(';').Select(Guid.Parse);
                     return pluginIds.Contains(plugin.PluginId);
                 }
@@ -162,5 +167,41 @@ public class TokensService : ITokensService
         {
             return false;
         }
+    }
+
+    public async Task<AuthorizedUserRead?> GetUser(ClaimsPrincipal claims)
+    {
+        try
+        {
+            if (claims.HasClaim(c => c.Type == "UserId"))
+            {
+                return await _usersRepository.Get(Guid.Parse(claims.Claims.Single(c => c.Type == "UserId").Value));
+            }
+
+            if (claims.Identity?.Name == null)
+                return null;
+
+            return await _usersRepository.GetLastByLogin(claims.Identity.Name);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    public async Task<AuthorizedUserRead?> GetUser(ClaimsPrincipal claims, TokenPermission permission, object id)
+    {
+        var user = await GetUser(claims);
+        if (user == null || !await CheckPermissions(claims, permission, id))
+            return null;
+        return user;
+    }
+
+    public async Task<AuthorizedUserRead?> GetUser(ClaimsPrincipal claims, TokenPermission permission)
+    {
+        var user = await GetUser(claims);
+        if (user == null || !await CheckPermissions(claims, permission, user.UserId))
+            return null;
+        return user;
     }
 }

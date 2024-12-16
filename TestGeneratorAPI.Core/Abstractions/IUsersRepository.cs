@@ -6,7 +6,7 @@ public interface IUsersRepository
 {
     // Task<List<UserRead>> GetAll();
 
-    // Task<UserRead> Get(Guid userId);
+    Task<AuthorizedUserRead> Get(Guid userId);
     
     Task<AuthorizedUserRead> GetLastByLogin(string login);
 

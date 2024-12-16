@@ -96,6 +96,28 @@ public class UsersRepository : IUsersRepository
             throw new UserRepositoryException("Failed to create template", e);
         }
     }
+
+    public async Task<AuthorizedUserRead> Get(Guid userId)
+    {
+        try
+        {
+            var entity = await _dbContext.Users.Where(u => u.UserId == userId).SingleAsync();
+            return new AuthorizedUserRead
+            {
+                UserId = entity.UserId,
+                Login = entity.Login,
+                Name = entity.Name,
+                PasswordHash = entity.PasswordHash,
+                CreatedAt = entity.CreatedAt,
+                UpdatedAt = entity.UpdatedAt,
+                DeletedAt = entity.DeletedAt,
+            };
+        }
+        catch (Exception e)
+        {
+            throw new UserRepositoryException("Failed to create template", e);
+        }
+    }
     
     // public async Task<User> Update(Guid templateid, Guid creatorid, string name, string text, DateTime updatedat) 
     // {

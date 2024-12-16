@@ -1,9 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using AspNetCore.Authentication.Basic;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TestGeneratorAPI.Core.Abstractions;
+using TestGeneratorAPI.Core.Enums;
 using TestGeneratorAPI.Core.Exceptions.Services;
 using TestGeneratorAPI.Core.Models;
 using TestGeneratorAPI.Web.Schemas;
@@ -15,16 +17,16 @@ namespace TestGeneratorAPI.Web.Controllers;
 public class PluginsController : ControllerBase
 {
     private readonly IPluginsService _pluginsService;
-    private readonly IUsersService _usersService;
-    
-    public PluginsController(IPluginsService pluginsService, IUsersService usersService)
+    private readonly ITokensService _tokensService;
+
+    public PluginsController(IPluginsService pluginsService, ITokensService usersService)
     {
         _pluginsService = pluginsService;
-        _usersService = usersService;
+        _tokensService = usersService;
     }
 
     [HttpPost]
-    [Authorize(AuthenticationSchemes = BasicDefaults.AuthenticationScheme)]
+    [Authorize(AuthenticationSchemes = "Basic,Bearer")]
     [ProducesResponseType(typeof(ResponseSchema<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status409Conflict)]
@@ -33,7 +35,9 @@ public class PluginsController : ControllerBase
     {
         try
         {
-            var user = await _usersService.Get(User.Identity?.Name ?? "");
+            var user = await _tokensService.GetUser(User, TokenPermission.CreatePlugin, request.Key);
+            if (user == null)
+                return Unauthorized();
             var id = await _pluginsService.CreatePlugin(request, user.UserId);
 
             return Ok(new ResponseSchema<Guid>
@@ -88,14 +92,18 @@ public class PluginsController : ControllerBase
     }
 
     [HttpGet("my")]
-    [Authorize(AuthenticationSchemes = BasicDefaults.AuthenticationScheme)]
+    [Authorize(AuthenticationSchemes = "Basic,Bearer")]
     [ProducesResponseType(typeof(ResponseSchema<PluginRead[]>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ResponseSchema<PluginRead[]>>> GetUserPlugins()
     {
         try
         {
-            var user = await _usersService.Get(User.Identity?.Name ?? "");
+            var user = await _tokensService.GetUser(User);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
             var plugins = await _pluginsService.GetUserPlugins(user.UserId);
 
             return Ok(new ResponseSchema<PluginRead[]>

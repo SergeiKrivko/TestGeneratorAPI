@@ -28,7 +28,7 @@ public class PluginReleasesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [Authorize(AuthenticationSchemes = "Basic,Bearer")]
     [ProducesResponseType(typeof(ResponseSchema<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status409Conflict)]
@@ -38,11 +38,27 @@ public class PluginReleasesController : ControllerBase
     {
         try
         {
-            var plugin = await _pluginsService.GetPluginByKey(request.Key);
-
-            if (!await _tokensService.CheckPermissions(User, TokenPermission.CreateRelease, plugin.PluginId))
+            PluginRead plugin;
+            AuthorizedUserRead? user;
+            try
             {
-                return StatusCode(StatusCodes.Status401Unauthorized, new { error = "Permission denied" });
+                plugin = await _pluginsService.GetPluginByKey(request.Key);
+                user = await _tokensService.GetUser(User, TokenPermission.CreateRelease, plugin.PluginId);
+                if (user == null)
+                {
+                    return StatusCode(StatusCodes.Status401Unauthorized, new { error = "Permission denied" });
+                }
+            }
+            catch (Exception)
+            {
+                user = await _tokensService.GetUser(User, TokenPermission.CreatePlugin, request.Key);
+                if (user == null)
+                {
+                    return StatusCode(StatusCodes.Status401Unauthorized, new { error = "Permission denied" });
+                }
+
+                var newPluginId = await _pluginsService.CreatePlugin(new PluginCreate { Key = request.Key }, user.UserId);
+                plugin = await _pluginsService.GetPlugin(newPluginId);
             }
 
             if (await _pluginReleasesService.PluginReleaseExists(plugin.PluginId, request.Version, request.Runtime))

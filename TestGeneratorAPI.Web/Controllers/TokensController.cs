@@ -23,7 +23,7 @@ public class TokensController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(AuthenticationSchemes = BasicDefaults.AuthenticationScheme)]
+    [Authorize(AuthenticationSchemes = "Basic,Bearer")]
     [ProducesResponseType(typeof(ResponseSchema<string>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
@@ -36,8 +36,10 @@ public class TokensController : ControllerBase
             if (request.Type == TokenType.Admin)
                 return StatusCode(StatusCodes.Status401Unauthorized,
                     new { error = "Permission denied: can not create admin token here" });
-
-            var user = await _usersService.Get(User.Identity?.Name ?? "");
+            
+            var user = await _tokensService.GetUser(User, TokenPermission.UpdateUser);
+            if (user == null)
+                return Unauthorized();
 
             var token = await _tokensService.CreateToken(request, user.UserId);
 
@@ -59,7 +61,7 @@ public class TokensController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(AuthenticationSchemes = BasicDefaults.AuthenticationScheme)]
+    [Authorize(AuthenticationSchemes = "Basic,Bearer")]
     [ProducesResponseType(typeof(ResponseSchema<string>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(void), StatusCodes.Status500InternalServerError)]
@@ -67,7 +69,9 @@ public class TokensController : ControllerBase
     {
         try
         {
-            var user = await _usersService.Get(User.Identity?.Name ?? "");
+            var user = await _tokensService.GetUser(User);
+            if (user == null)
+                return Unauthorized();
 
             var tokens = await _tokensService.GetTokensOfUser(user.UserId);
 
@@ -122,7 +126,7 @@ public class TokensController : ControllerBase
     }
 
     [HttpDelete("{tokenId:guid}")]
-    [Authorize(AuthenticationSchemes = BasicDefaults.AuthenticationScheme)]
+    [Authorize(AuthenticationSchemes = "Basic,Bearer")]
     [ProducesResponseType(typeof(ResponseSchema<string>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(void), StatusCodes.Status500InternalServerError)]
@@ -130,7 +134,9 @@ public class TokensController : ControllerBase
     {
         try
         {
-            var user = await _usersService.Get(User.Identity?.Name ?? "");
+            var user = await _tokensService.GetUser(User, TokenPermission.UpdateUser);
+            if (user == null)
+                return Unauthorized();
 
             var token = await _tokensService.GetToken(tokenId);
             if (token.UserId != user.UserId)
