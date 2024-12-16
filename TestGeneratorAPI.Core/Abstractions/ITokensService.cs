@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using TestGeneratorAPI.Core.Enums;
 using TestGeneratorAPI.Core.Models;
 
 namespace TestGeneratorAPI.Core.Abstractions;
@@ -11,10 +13,8 @@ public interface ITokensService
     public Task<List<TokenRead>> GetTokensOfUser(Guid userId);
 
     public Task<TokenRead> GetToken(Guid tokenId);
-    
+
     public Task<Guid> DeleteToken(Guid tokenId);
 
-    // Task<UserRead> UpdateUser(Guid userId, UserCreate user);
-
-    
+    public Task<bool> CheckPermissions(ClaimsPrincipal claims, TokenPermission permission, Guid id);
 }

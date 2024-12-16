@@ -1,3 +1,4 @@
+using TestGeneratorAPI.Core.Enums;
 using TestGeneratorAPI.Core.Models;
 
 namespace TestGeneratorAPI.Core.Abstractions;
@@ -10,7 +11,7 @@ public interface ITokensRepository
     
     // Task<UserRead?> GetLastByLogin(string login);
 
-    Task<Guid> Create(Guid id, Guid userId, string name);
+    Task<Guid> Create(Guid id, Guid userId, TokenType type, string name, DateTime expiresAt, string[] permissions);
 
     // Task<Guid> Update(Guid id, string passwordHash, string? name);
 

@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TestGeneratorAPI.Core.Abstractions;
+using TestGeneratorAPI.Core.Enums;
 using TestGeneratorAPI.Core.Models;
 using TestGeneratorAPI.Web.Schemas;
 
@@ -16,13 +16,15 @@ public class PluginReleasesController : ControllerBase
     private readonly IPluginReleasesService _pluginReleasesService;
     private readonly IUsersService _usersService;
     private readonly IPluginsService _pluginsService;
+    private readonly ITokensService _tokensService;
 
     public PluginReleasesController(IPluginReleasesService pluginReleasesService, IPluginsService pluginsService,
-        IUsersService usersService)
+        IUsersService usersService, ITokensService tokensService)
     {
         _pluginReleasesService = pluginReleasesService;
         _usersService = usersService;
         _pluginsService = pluginsService;
+        _tokensService = tokensService;
     }
 
     [HttpPost]
@@ -36,18 +38,9 @@ public class PluginReleasesController : ControllerBase
     {
         try
         {
-            foreach (var claim in User.Claims)
-            {
-                Console.WriteLine($"{claim.Type} {claim.Value}");
-            }
-
-            var tokenId = Guid.Parse(User.Claims.Single(c => c.Type == "Id").Value);
-            var userId = Guid.Parse(User.Claims.Single(c => c.Type == "UserId").Value);
-            var pluginIds =
-                JsonSerializer.Deserialize<Guid[]>(User.Claims.Single(c => c.Type == "Plugins").Value);
             var plugin = await _pluginsService.GetPluginByKey(request.Key);
 
-            if (!pluginIds?.Contains(plugin.PluginId) == true)
+            if (!await _tokensService.CheckPermissions(User, TokenPermission.CreateRelease, plugin.PluginId))
             {
                 return StatusCode(StatusCodes.Status401Unauthorized, new { error = "Permission denied" });
             }
@@ -61,7 +54,8 @@ public class PluginReleasesController : ControllerBase
                                  $"and runtime {request.Runtime} already exists"
                     });
 
-            var id = await _pluginReleasesService.CreatePluginRelease(request, userId);
+            var id = await _pluginReleasesService.CreatePluginRelease(request,
+                Guid.Parse(User.Claims.Single(c => c.Type == "UserId").Value));
 
             return Ok(new ResponseSchema<Guid>
             {

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TestGeneratorAPI.Core.Abstractions;
+using TestGeneratorAPI.Core.Enums;
 using TestGeneratorAPI.Core.Exceptions.Repositories;
 using TestGeneratorAPI.Core.Models;
 using TestGeneratorAPI.DataAccess.Context;
@@ -16,7 +17,7 @@ public class TokensRepository : ITokensRepository
         _dbContext = dbContext;
     }
     
-    public async Task<Guid> Create(Guid id, Guid userId, string name) 
+    public async Task<Guid> Create(Guid id, Guid userId, TokenType type, string name, DateTime expiresAt, string[] permissions) 
     {
         try
         {
@@ -24,7 +25,10 @@ public class TokensRepository : ITokensRepository
             {
                 TokenId = id,
                 UserId = userId,
+                Type = type,
                 Name = name,
+                ExpiresAt = expiresAt,
+                Permissions = permissions,
             };
             
             await _dbContext.Tokens.AddAsync(entity); 
@@ -56,10 +60,13 @@ public class TokensRepository : ITokensRepository
         return new TokenRead
         {
             TokenId = entity.TokenId,
-            Name = entity.Name,
             UserId = entity.UserId,
+            Type = entity.Type,
+            Name = entity.Name,
             CreatedAt = entity.CreatedAt,
+            ExpiresAt = entity.ExpiresAt,
             DeletedAt = entity.DeletedAt,
+            Permissions = entity.Permissions,
         };
     }
 
