@@ -125,7 +125,7 @@ public class TokensService : ITokensService
             if (token.UserId != userId || token.DeletedAt != null)
                 return false;
 
-            if (!token.Permissions.Contains(permission.Key))
+            if (!token.Permissions.Contains(permission.Key) || !permission.TokenTypes.Contains(token.Type))
                 return false;
 
             switch (token.Type)
@@ -133,7 +133,7 @@ public class TokensService : ITokensService
                 case TokenType.Admin:
                     return true;
                 case TokenType.User:
-                    return !permission.AdminOnly;
+                    return true;
                 case TokenType.Mask:
                 {
                     var matcher = new Matcher();
