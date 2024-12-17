@@ -16,10 +16,19 @@ public class TokenConfiguration : IEntityTypeConfiguration<TokenEntity>
         builder.Property(b => b.UserId)
             .IsRequired();
         
+        builder.Property(b => b.Permissions)
+            .IsRequired();
+        
+        builder.Property(b => b.Type)
+            .IsRequired();
+        
         builder.Property(b => b.Name)
             .IsRequired();
         
         builder.Property(b => b.CreatedAt)
+            .IsRequired();
+        
+        builder.Property(b => b.ExpiresAt)
             .IsRequired();
         
         builder.Property(b => b.DeletedAt)

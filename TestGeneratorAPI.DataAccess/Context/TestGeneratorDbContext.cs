@@ -4,7 +4,7 @@ using TestGeneratorAPI.DataAccess.Entities;
 
 namespace TestGeneratorAPI.DataAccess.Context;
 
-public class TestGeneratorDbContext : Microsoft.EntityFrameworkCore.DbContext
+public class TestGeneratorDbContext : DbContext
 {
     public TestGeneratorDbContext(DbContextOptions<TestGeneratorDbContext> options)
         : base(options)
@@ -15,6 +15,7 @@ public class TestGeneratorDbContext : Microsoft.EntityFrameworkCore.DbContext
     public DbSet<TokenEntity> Tokens { get; init; }
     public DbSet<PluginEntity> Plugins { get; init; }
     public DbSet<PluginReleaseEntity> PluginReleases { get; init; }
+    public DbSet<AppFileEntity> AppFiles { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,5 +25,6 @@ public class TestGeneratorDbContext : Microsoft.EntityFrameworkCore.DbContext
         modelBuilder.ApplyConfiguration(new TokenConfiguration());
         modelBuilder.ApplyConfiguration(new PluginConfiguration());
         modelBuilder.ApplyConfiguration(new PluginReleaseConfiguration());
+        modelBuilder.ApplyConfiguration(new AppFileConfiguration());
     }
 }
