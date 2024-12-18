@@ -1,5 +1,6 @@
 ﻿using System.IO.Compression;
 using System.Security.Cryptography;
+using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -109,7 +110,7 @@ public class AppFileService : IAppFileService
         {
             var putRequest = new PutObjectRequest
             {
-                BucketName = MainBucket,
+                BucketName = ZipBucket,
                 Key = zipId.ToString(),
                 InputStream = stream,
                 ContentType = "application/zip"

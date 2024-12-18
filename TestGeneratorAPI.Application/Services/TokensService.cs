@@ -112,16 +112,13 @@ public class TokensService : ITokensService
 
     public async Task<bool> CheckPermissions(ClaimsPrincipal claims, TokenPermission permission, object id)
     {
-        Console.WriteLine($"CheckPermissions {permission.Key}");
         try
         {
             if (!claims.HasClaim(c => c.Type == "TokenId"))
-                return true;
+                return permission.TokenTypes.Contains(TokenType.User);
             var tokenId = Guid.Parse(claims.Claims.Single(c => c.Type == "TokenId").Value);
             var userId = Guid.Parse(claims.Claims.Single(c => c.Type == "UserId").Value);
             var token = await GetToken(tokenId);
-            
-            Console.WriteLine($"Token type = {token.Type}");
 
             if (token.UserId != userId || token.DeletedAt != null)
                 return false;
