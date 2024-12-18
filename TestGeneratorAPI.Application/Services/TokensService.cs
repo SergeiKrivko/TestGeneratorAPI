@@ -112,6 +112,7 @@ public class TokensService : ITokensService
 
     public async Task<bool> CheckPermissions(ClaimsPrincipal claims, TokenPermission permission, object id)
     {
+        Console.WriteLine($"CheckPermissions {permission.Key}");
         try
         {
             if (!claims.HasClaim(c => c.Type == "TokenId"))
@@ -133,7 +134,12 @@ public class TokensService : ITokensService
                 case TokenType.Admin:
                     return true;
                 case TokenType.User:
-                    return true;
+                {
+                    if (permission.Key == "createPlugin")
+                        return true;
+                    var plugin = await _pluginsRepository.Get((Guid)id);
+                    return plugin.OwnerId == userId;
+                }
                 case TokenType.Mask:
                 {
                     var matcher = new Matcher();
@@ -148,6 +154,8 @@ public class TokensService : ITokensService
                         return false;
                     
                     var plugin = await _pluginsRepository.Get((Guid)id);
+                    if (plugin.OwnerId != userId)
+                        return false;
                     return matcher.Match(plugin.Key).HasMatches;
                 }
                 case TokenType.Plugins:
@@ -156,6 +164,8 @@ public class TokensService : ITokensService
                         permission.Key != "removePlugin")
                         return false;
                     var plugin = await _pluginsRepository.Get((Guid)id);
+                    if (plugin.OwnerId != userId)
+                        return false;
                     var pluginIds = claims.Claims.Single(c => c.Type == "Plugins").Value.Split(';').Select(Guid.Parse);
                     return pluginIds.Contains(plugin.PluginId);
                 }

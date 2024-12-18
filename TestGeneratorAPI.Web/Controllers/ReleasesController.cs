@@ -1,14 +1,10 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
-using AspNetCore.Authentication.Basic;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TestGeneratorAPI.Core.Abstractions;
 using TestGeneratorAPI.Core.Enums;
-using TestGeneratorAPI.Core.Exceptions.Services;
-using TestGeneratorAPI.Core.Models;
 using TestGeneratorAPI.Web.Schemas;
+using Guid = System.Guid;
 
 namespace TestGeneratorAPI.Web.Controllers;
 
@@ -27,25 +23,22 @@ public class ReleasesController : ControllerBase
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    [ProducesResponseType(typeof(ResponseSchema<List<Guid>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ResponseSchema<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ResponseSchema<List<Guid>>>> UploadRelease(IFormFile file,
+    public async Task<ActionResult<ResponseSchema<Guid>>> UploadRelease(IFormFile file,
         [FromQuery, Required] Version version, [FromQuery, Required] string runtime)
     {
+        Console.WriteLine("POST api/v2/releases");
         try
         {
             var user = await _tokensService.GetUser(User, TokenPermission.CreateTestGeneratorRelease);
+            Console.WriteLine($"UserId = {user?.UserId}");
             if (user == null)
                 return Unauthorized();
-            var res = new List<Guid>();
-            // foreach (var file in files)
-            // {
-            //     res.Add(await _appFileService.UploadFile(file.FileName, version, runtime, file));
-            // }
-            res.Add(await _appFileService.UploadFile(file.FileName, version, runtime, file));
+            var res = await _appFileService.UploadFile(file.FileName, version, runtime, file);
 
-            return Ok(new ResponseSchema<List<Guid>>
+            return Ok(new ResponseSchema<Guid>
             {
                 Data = res,
                 Detail = "Release assets were uploaded."
