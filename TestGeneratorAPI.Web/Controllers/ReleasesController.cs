@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TestGeneratorAPI.Core.Abstractions;
 using TestGeneratorAPI.Core.Enums;
+using TestGeneratorAPI.Core.Models;
 using TestGeneratorAPI.Web.Schemas;
 using Guid = System.Guid;
 
@@ -39,6 +40,34 @@ public class ReleasesController : ControllerBase
             var res = await _appFileService.UploadFile(file.FileName, version, runtime, file);
 
             return Ok(new ResponseSchema<Guid>
+            {
+                Data = res,
+                Detail = "Release assets were uploaded."
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return StatusCode(StatusCodes.Status400BadRequest, new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { error = "Error in method CreateRelease", details = ex.Message });
+        }
+    }
+
+    [HttpPost("download")]
+    [ProducesResponseType(typeof(ResponseSchema<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ResponseSchema<string>>> DownloadRelease([FromBody] AppFileDownload[] files,
+        [FromQuery, Required] string runtime)
+    {
+        try
+        {
+            var res = await _appFileService.CreateReleaseZip(files, runtime);
+
+            return Ok(new ResponseSchema<string>
             {
                 Data = res,
                 Detail = "Release assets were uploaded."

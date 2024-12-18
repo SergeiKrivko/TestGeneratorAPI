@@ -1,7 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
-using AspNetCore.Authentication.Basic;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TestGeneratorAPI.Core.Abstractions;

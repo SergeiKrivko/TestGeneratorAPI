@@ -75,6 +75,24 @@ public class AppFilesRepository : IAppFilesRepository
         }
     }
 
+    public async Task<List<AppFileRead>> GetAllLatest(string runtime)
+    {
+        try
+        {
+            var lst = await _dbContext.AppFiles.Where(e =>
+                    e.Runtime == runtime && e.DeletedAt == null && e.CreatedAt == _dbContext.AppFiles
+                        .Where(a => a.Runtime == runtime && a.Filename == e.Filename && a.DeletedAt == null)
+                        .Select(a => a.CreatedAt)
+                        .Max())
+                .ToListAsync();
+            return lst.Select(Convert).ToList();
+        }
+        catch (Exception e)
+        {
+            throw new AppFilesRepositoryException("Failed to get all app files", e);
+        }
+    }
+
     public async Task<Guid> Create(Guid id, string filename, Version version, string runtime, string hash)
     {
         try
