@@ -83,4 +83,31 @@ public class ReleasesController : ControllerBase
                 new { error = "Error in method CreateRelease", details = ex.Message });
         }
     }
+
+    [HttpGet("latest")]
+    [ProducesResponseType(typeof(ResponseSchema<Version>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ResponseSchema<Version>>> GetLatestVersion([FromQuery, Required] string runtime)
+    {
+        try
+        {
+            var res = await _appFileService.GetLatestVersion(runtime);
+
+            return Ok(new ResponseSchema<Version>
+            {
+                Data = res,
+                Detail = "Latest version was selected."
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return StatusCode(StatusCodes.Status400BadRequest, new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { error = "Error in method CreateRelease", details = ex.Message });
+        }
+    }
 }

@@ -9,4 +9,6 @@ public interface IAppFileService
     public Task<Stream?> GetFile(AppFileDownload file, string runtime);
 
     public Task<string> CreateReleaseZip(AppFileDownload[] files, string runtime);
+
+    public Task<Version> GetLatestVersion(string runtime);
 }

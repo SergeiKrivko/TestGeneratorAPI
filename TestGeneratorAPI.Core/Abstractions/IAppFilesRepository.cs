@@ -14,4 +14,6 @@ public interface IAppFilesRepository
     public Task<Guid> Create(Guid id, string filename, Version version, string runtime, string hash);
 
     public Task<List<AppFileRead>> GetAllLatest(string runtime);
+    
+    public Task<Version> GetLatestVersion(string runtime);
 }

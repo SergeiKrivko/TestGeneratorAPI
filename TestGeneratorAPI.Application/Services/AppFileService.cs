@@ -87,12 +87,13 @@ public class AppFileService : IAppFileService
         using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
         {
             var fileEntities = await _appFilesRepository.GetAllLatest(runtime);
-            Console.WriteLine(string.Join("; ", fileEntities.Select(e => e.Filename)));
+            // Console.WriteLine(string.Join("; ", fileEntities.Select(e => e.Filename)));
             foreach (var fileEntity in fileEntities)
             {
                 var file = files.FirstOrDefault(f => f.Filename == fileEntity.Filename);
                 if (file?.Hash == fileEntity.Hash)
                     continue;
+                Console.WriteLine($"Adding {file?.Filename}");
                 using (var stream = (await _s3Client.GetObjectAsync(MainBucket, fileEntity.Id.ToString()))
                        .ResponseStream)
                 {
@@ -128,5 +129,10 @@ public class AppFileService : IAppFileService
             Expires = DateTime.UtcNow.AddHours(1)
         };
         return await _s3Client.GetPreSignedURLAsync(request);
+    }
+
+    public Task<Version> GetLatestVersion(string runtime)
+    {
+        return _appFilesRepository.GetLatestVersion(runtime);
     }
 }

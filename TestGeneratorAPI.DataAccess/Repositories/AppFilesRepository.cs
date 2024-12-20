@@ -115,6 +115,13 @@ public class AppFilesRepository : IAppFilesRepository
         }
     }
 
+    public async Task<Version> GetLatestVersion(string runtime)
+    {
+        var lastEntity = await _dbContext.AppFiles.Where(e => e.Runtime == runtime && e.DeletedAt == null)
+            .OrderBy(e => e.CreatedAt).LastAsync();
+        return Version.Parse(lastEntity.Version);
+    }
+
     private static AppFileRead Convert(AppFileEntity entity)
     {
         return new AppFileRead
