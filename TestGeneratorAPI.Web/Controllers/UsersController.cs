@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TestGeneratorAPI.Core.Abstractions;
+using TestGeneratorAPI.Core.Enums;
 using TestGeneratorAPI.Core.Models;
 using TestGeneratorAPI.Web.Schemas;
 
@@ -11,13 +13,16 @@ namespace TestGeneratorAPI.Web.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUsersService _usersService;
+    private readonly ITokensService _tokensService;
     
-    public UsersController(IUsersService usersService)
+    public UsersController(IUsersService usersService, ITokensService tokensService)
     {
         _usersService = usersService;
+        _tokensService = tokensService;
     }
 
     [HttpPost]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [ProducesResponseType(typeof(ResponseSchema<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status409Conflict)]
@@ -26,6 +31,10 @@ public class UsersController : ControllerBase
     {
         try
         {
+            var user = await _tokensService.GetUser(User, TokenPermission.CreateUser);
+            if (user == null)
+                return Unauthorized();
+            
             var id = await _usersService.CreateUser(request);
 
             return Ok(new ResponseSchema<Guid>

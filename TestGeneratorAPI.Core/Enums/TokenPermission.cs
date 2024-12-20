@@ -41,4 +41,10 @@ public class TokenPermission
         Key = "createTestGeneratorRelease", Description = "Публикация релизов TestGenerator",
         TokenTypes = [TokenType.Admin]
     };
+
+    public static TokenPermission CreateUser { get; } = new TokenPermission
+    {
+        Key = "createUser", Description = "Создание новых пользователей",
+        TokenTypes = [TokenType.Admin]
+    };
 }
