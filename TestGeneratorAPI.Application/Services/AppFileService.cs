@@ -69,7 +69,14 @@ public class AppFileService : IAppFileService
         
         Console.WriteLine(string.Join("; ", files));
 
-        await using (var zipStream = zipFile.OpenReadStream())
+        var zipPath = Path.GetTempFileName() + ".zip";
+        await using (var stream = File.OpenWrite(zipPath))
+        using (var zipStream = zipFile.OpenReadStream())
+        {
+            await stream.CopyToAsync(zipStream);
+        }
+
+        await using(var zipStream = File.OpenRead(zipPath))
         using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Read))
         {
             foreach (var filename in files)
@@ -109,6 +116,8 @@ public class AppFileService : IAppFileService
                 }
             }
         }
+        
+        File.Delete(zipPath);
 
         return releaseId;
     }
