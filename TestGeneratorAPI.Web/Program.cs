@@ -80,6 +80,7 @@ builder.Services.AddScoped<IPluginsRepository, PluginsRepository>();
 builder.Services.AddScoped<IPluginsService, PluginsService>();
 builder.Services.AddScoped<IPluginReleasesRepository, PluginReleasesRepository>();
 builder.Services.AddScoped<IPluginReleasesService, PluginReleasesService>();
+builder.Services.AddScoped<IReleaseRepository, ReleaseRepository>();
 builder.Services.AddScoped<IAppFilesRepository, AppFilesRepository>();
 builder.Services.AddScoped<IAppFileService, AppFileService>();
 

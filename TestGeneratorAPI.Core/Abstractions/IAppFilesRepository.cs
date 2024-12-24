@@ -5,15 +5,8 @@ namespace TestGeneratorAPI.Core.Abstractions;
 public interface IAppFilesRepository
 {
     public Task<AppFileRead> Get(Guid id);
-
-    public Task<AppFileRead> Get(string filename, Version version, string runtime);
-    public Task<AppFileRead> GetLatest(string filename, string runtime);
     
-    public Task<List<AppFileRead>> GetAll(Version version, string runtime);
+    public Task<List<AppFileRead>> GetAll(Guid releaseId);
 
-    public Task<Guid> Create(Guid id, string filename, Version version, string runtime, string hash);
-
-    public Task<List<AppFileRead>> GetAllLatest(string runtime);
-    
-    public Task<Version> GetLatestVersion(string runtime);
+    public Task<Guid> Create(Guid id, Guid releaseId, Guid s3Id, string filename, string hash);
 }

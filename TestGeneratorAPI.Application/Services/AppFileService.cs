@@ -1,12 +1,10 @@
 ﻿using System.IO.Compression;
 using System.Security.Cryptography;
-using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.AspNetCore.Http;
 using TestGeneratorAPI.Core.Abstractions;
-using TestGeneratorAPI.Core.Exceptions.Repositories;
 using TestGeneratorAPI.Core.Models;
 
 namespace TestGeneratorAPI.Application.Services;
@@ -14,80 +12,117 @@ namespace TestGeneratorAPI.Application.Services;
 public class AppFileService : IAppFileService
 {
     private readonly AmazonS3Client _s3Client;
+    private readonly IReleaseRepository _releaseRepository;
     private readonly IAppFilesRepository _appFilesRepository;
 
     private const string MainBucket = "bucket-testgenerator";
     private const string ZipBucket = "testgenerator-zip";
 
-    public AppFileService(IAppFilesRepository appFilesRepository)
+    public AppFileService(IReleaseRepository releaseRepository, IAppFilesRepository appFilesRepository)
     {
         _s3Client = new AmazonS3Client(
             new BasicAWSCredentials(Environment.GetEnvironmentVariable("S3_ACCESS_KEY"),
                 Environment.GetEnvironmentVariable("S3_SECRET_KEY")),
             new AmazonS3Config
                 { ServiceURL = "https://s3.cloud.ru", AuthenticationRegion = "ru-central-1", ForcePathStyle = true });
+        _releaseRepository = releaseRepository;
         _appFilesRepository = appFilesRepository;
     }
 
-    public async Task<Guid> UploadFile(string filename, Version version, string runtime, IFormFile file)
+    public async Task<List<string>> FilterFiles(string runtime, ICollection<AppFileDownload> files)
     {
-        var id = Guid.NewGuid();
-
-        string hash;
-        using (var sha256 = SHA256.Create())
-        {
-            await using (var stream = file.OpenReadStream())
-            {
-                var hashBytes = await sha256.ComputeHashAsync(stream);
-                hash = BitConverter.ToString(hashBytes);
-            }
-        }
+        var res = new List<string>();
 
         try
         {
-            var existing = await _appFilesRepository.GetLatest(filename, runtime);
-            if (existing.Hash == hash)
-                return existing.Id;
-        }
-        catch (AppFilesRepositoryException)
-        {
-        }
-
-        await using (var stream = file.OpenReadStream())
-        {
-            var putRequest = new PutObjectRequest
+            var release = await _releaseRepository.GetLatest(runtime);
+            var existingFiles = await _appFilesRepository.GetAll(release.ReleaseId);
+            foreach (var file in files)
             {
-                BucketName = MainBucket,
-                Key = id.ToString(),
-                InputStream = stream,
-                ContentType = "application/octet-stream"
-            };
+                var existing = existingFiles.FirstOrDefault(e => e.Filename == file.Filename);
+                if (!string.Equals(existing?.Hash, file.Hash, StringComparison.InvariantCultureIgnoreCase))
+                    res.Add(file.Filename);
+            }
 
-            await _s3Client.PutObjectAsync(putRequest);
+            return res;
         }
-
-        await _appFilesRepository.Create(id, filename, version, runtime, hash);
-
-        return id;
+        catch (InvalidOperationException)
+        {
+            return files.Select(f => f.Filename).ToList();
+        }
     }
 
-    public async Task<Stream?> GetFile(AppFileDownload file, string runtime)
+    public async Task<Guid> UploadReleaseZip(Version version, string runtime, IFormFile zipFile, string[] files)
     {
-        var fileEntity = await _appFilesRepository.GetLatest(file.Filename, runtime);
-        if (fileEntity.Hash == file.Hash)
-            return null;
-        return (await _s3Client.GetObjectAsync(MainBucket, fileEntity.Id.ToString())).ResponseStream;
+        var releaseId = Guid.NewGuid();
+        List<AppFileRead> existingFiles = [];
+        try
+        {
+            var previousRelease = await _releaseRepository.GetLatest(runtime);
+            existingFiles = await _appFilesRepository.GetAll(previousRelease.ReleaseId);
+        }
+        catch (InvalidOperationException)
+        {
+        }
+
+        await _releaseRepository.CreateRelease(releaseId, runtime, version);
+        
+        Console.WriteLine(string.Join("; ", files));
+
+        await using (var zipStream = zipFile.OpenReadStream())
+        using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Read))
+        {
+            foreach (var filename in files)
+            {
+                var entry = zipArchive.GetEntry(filename);
+                if (entry == null)
+                {
+                    var existing = existingFiles.First(e => e.Filename == filename);
+                    await _appFilesRepository.Create(Guid.NewGuid(), releaseId, existing.S3Id, filename, existing.Hash);
+                }
+                else
+                {
+                    string hash;
+                    await using (var fileStream = entry.Open())
+                    using (var sha256 = SHA256.Create())
+                    {
+                        var hashBytes = await sha256.ComputeHashAsync(fileStream);
+                        hash = BitConverter.ToString(hashBytes).Replace("-", "");
+                    }
+                    
+                    var s3Id = Guid.NewGuid();
+
+                    await using (var stream = entry.Open())
+                    {
+                        var putRequest = new PutObjectRequest
+                        {
+                            BucketName = MainBucket,
+                            Key = s3Id.ToString(),
+                            InputStream = stream,
+                            ContentType = "application/octet-stream"
+                        };
+                    
+                        await _s3Client.PutObjectAsync(putRequest);
+                    }
+
+                    await _appFilesRepository.Create(Guid.NewGuid(), releaseId, s3Id, entry.FullName, hash);
+                }
+            }
+        }
+
+        return releaseId;
     }
 
     public async Task<string> CreateReleaseZip(AppFileDownload[] files, string runtime)
     {
         var zipFilePath = Path.GetTempFileName() + ".zip"; // Создаем временный файл
 
+        var release = await _releaseRepository.GetLatest(runtime);
+
         await using (var zipStream = new FileStream(zipFilePath, FileMode.Create))
         using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
         {
-            var fileEntities = await _appFilesRepository.GetAllLatest(runtime);
-            // Console.WriteLine(string.Join("; ", fileEntities.Select(e => e.Filename)));
+            var fileEntities = await _appFilesRepository.GetAll(release.ReleaseId);
             foreach (var fileEntity in fileEntities)
             {
                 var file = files.FirstOrDefault(f => f.Filename == fileEntity.Filename);
@@ -131,8 +166,8 @@ public class AppFileService : IAppFileService
         return await _s3Client.GetPreSignedURLAsync(request);
     }
 
-    public Task<Version> GetLatestVersion(string runtime)
+    public async Task<Version> GetLatestVersion(string runtime)
     {
-        return _appFilesRepository.GetLatestVersion(runtime);
+        return (await _releaseRepository.GetLatest(runtime)).Version;
     }
 }

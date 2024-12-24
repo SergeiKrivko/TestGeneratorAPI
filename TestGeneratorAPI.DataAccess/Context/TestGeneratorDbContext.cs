@@ -15,6 +15,7 @@ public class TestGeneratorDbContext : DbContext
     public DbSet<TokenEntity> Tokens { get; init; }
     public DbSet<PluginEntity> Plugins { get; init; }
     public DbSet<PluginReleaseEntity> PluginReleases { get; init; }
+    public DbSet<ReleaseEntity> Releases { get; init; }
     public DbSet<AppFileEntity> AppFiles { get; init; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -25,6 +26,7 @@ public class TestGeneratorDbContext : DbContext
         modelBuilder.ApplyConfiguration(new TokenConfiguration());
         modelBuilder.ApplyConfiguration(new PluginConfiguration());
         modelBuilder.ApplyConfiguration(new PluginReleaseConfiguration());
+        modelBuilder.ApplyConfiguration(new ReleaseConfiguration());
         modelBuilder.ApplyConfiguration(new AppFileConfiguration());
     }
 }

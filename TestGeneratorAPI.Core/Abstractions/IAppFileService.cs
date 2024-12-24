@@ -5,8 +5,8 @@ namespace TestGeneratorAPI.Core.Abstractions;
 
 public interface IAppFileService
 {
-    public Task<Guid> UploadFile(string filename, Version version, string runtime, IFormFile stream);
-    public Task<Stream?> GetFile(AppFileDownload file, string runtime);
+    public Task<List<string>> FilterFiles(string runtime, ICollection<AppFileDownload> files);
+    public Task<Guid> UploadReleaseZip(Version version, string runtime, IFormFile stream, string[] files);
 
     public Task<string> CreateReleaseZip(AppFileDownload[] files, string runtime);
 

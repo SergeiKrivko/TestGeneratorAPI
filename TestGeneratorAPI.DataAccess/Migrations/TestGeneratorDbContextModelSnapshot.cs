@@ -36,21 +36,23 @@ namespace TestGeneratorAPI.DataAccess.Migrations
 
                     b.Property<string>("Filename")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
 
                     b.Property<string>("Hash")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
-                    b.Property<string>("Runtime")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("ReleaseId")
+                        .HasColumnType("uuid");
 
-                    b.Property<string>("Version")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("S3Id")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ReleaseId");
 
                     b.ToTable("AppFiles");
                 });
@@ -126,6 +128,30 @@ namespace TestGeneratorAPI.DataAccess.Migrations
                     b.ToTable("PluginReleases");
                 });
 
+            modelBuilder.Entity("TestGeneratorAPI.DataAccess.Entities.ReleaseEntity", b =>
+                {
+                    b.Property<Guid>("ReleaseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Runtime")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("ReleaseId");
+
+                    b.ToTable("Releases");
+                });
+
             modelBuilder.Entity("TestGeneratorAPI.DataAccess.Entities.TokenEntity", b =>
                 {
                     b.Property<Guid>("TokenId")
@@ -192,6 +218,17 @@ namespace TestGeneratorAPI.DataAccess.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("TestGeneratorAPI.DataAccess.Entities.AppFileEntity", b =>
+                {
+                    b.HasOne("TestGeneratorAPI.DataAccess.Entities.ReleaseEntity", "Release")
+                        .WithMany("Files")
+                        .HasForeignKey("ReleaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Release");
+                });
+
             modelBuilder.Entity("TestGeneratorAPI.DataAccess.Entities.PluginEntity", b =>
                 {
                     b.HasOne("TestGeneratorAPI.DataAccess.Entities.UserEntity", "Owner")
@@ -225,6 +262,11 @@ namespace TestGeneratorAPI.DataAccess.Migrations
             modelBuilder.Entity("TestGeneratorAPI.DataAccess.Entities.PluginEntity", b =>
                 {
                     b.Navigation("Releases");
+                });
+
+            modelBuilder.Entity("TestGeneratorAPI.DataAccess.Entities.ReleaseEntity", b =>
+                {
+                    b.Navigation("Files");
                 });
 
             modelBuilder.Entity("TestGeneratorAPI.DataAccess.Entities.UserEntity", b =>

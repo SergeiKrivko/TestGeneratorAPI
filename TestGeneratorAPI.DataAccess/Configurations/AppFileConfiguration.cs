@@ -13,13 +13,13 @@ public class AppFileConfiguration : IEntityTypeConfiguration<AppFileEntity>
         builder.Property(x => x.Id)
             .ValueGeneratedOnAdd();
         
+        builder.Property(b => b.ReleaseId)
+            .IsRequired();
+        
+        builder.Property(b => b.S3Id)
+            .IsRequired();
+        
         builder.Property(b => b.Filename)
-            .IsRequired();
-        
-        builder.Property(b => b.Runtime)
-            .IsRequired();
-        
-        builder.Property(b => b.Version)
             .IsRequired();
         
         builder.Property(b => b.CreatedAt)
@@ -29,5 +29,9 @@ public class AppFileConfiguration : IEntityTypeConfiguration<AppFileEntity>
         
         builder.Property(b => b.Hash)
             .IsRequired();
+        
+        builder.HasOne(l => l.Release)
+            .WithMany(t => t.Files)
+            .HasForeignKey(l => l.ReleaseId);
     }
 }

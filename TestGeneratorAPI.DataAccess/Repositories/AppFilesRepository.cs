@@ -30,70 +30,22 @@ public class AppFilesRepository : IAppFilesRepository
         }
     }
 
-    public async Task<AppFileRead> Get(string filename, Version version, string runtime)
+    public async Task<List<AppFileRead>> GetAll(Guid releaseId)
     {
         try
         {
-            var entity = await _dbContext.AppFiles
-                .Where(e => e.Version == version.ToString() && e.Runtime == runtime &&
-                            e.Filename == filename && e.DeletedAt == null).LastAsync();
-            return Convert(entity);
-        }
-        catch (Exception e)
-        {
-            throw new AppFilesRepositoryException($"Failed to get app file {e}", e);
-        }
-    }
-
-    public async Task<AppFileRead> GetLatest(string filename, string runtime)
-    {
-        try
-        {
-            var entity = await _dbContext.AppFiles
-                .Where(e => e.Runtime == runtime && e.Filename == filename && e.DeletedAt == null)
-                .OrderBy(p => p.CreatedAt).LastAsync();
-            return Convert(entity);
-        }
-        catch (Exception e)
-        {
-            throw new AppFilesRepositoryException($"Failed to get app file {e}", e);
-        }
-    }
-
-    public async Task<List<AppFileRead>> GetAll(Version version, string runtime)
-    {
-        try
-        {
-            return await _dbContext.AppFiles.Where(e =>
-                    e.Version == version.ToString() && e.Runtime == runtime && e.DeletedAt == null)
+            return await _dbContext.AppFiles
+                .Where(e => e.ReleaseId == releaseId && e.DeletedAt == null)
                 .Select(e => Convert(e))
                 .ToListAsync();
         }
         catch (Exception e)
         {
-            throw new AppFilesRepositoryException("Failed to get all app files", e);
+            throw new AppFilesRepositoryException($"Failed to get app file {e}", e);
         }
     }
 
-    public async Task<List<AppFileRead>> GetAllLatest(string runtime)
-    {
-        try
-        {
-            var lst = await _dbContext.AppFiles.Where(e =>
-                    e.Runtime == runtime && e.DeletedAt == null && e.CreatedAt == _dbContext.AppFiles
-                        .Where(a => a.Runtime == runtime && a.Filename == e.Filename && a.DeletedAt == null)
-                        .Select(a => a.CreatedAt)
-                        .Max())
-                .ToListAsync();
-            return lst.Select(Convert).ToList();
-        }
-        catch (Exception e)
-        {
-            throw new AppFilesRepositoryException("Failed to get all app files", e);
-        }
-    }
-
-    public async Task<Guid> Create(Guid id, string filename, Version version, string runtime, string hash)
+    public async Task<Guid> Create(Guid id, Guid releaseId, Guid s3Id, string filename, string hash)
     {
         try
         {
@@ -101,10 +53,10 @@ public class AppFilesRepository : IAppFilesRepository
             {
                 Id = id,
                 Filename = filename,
-                Version = version.ToString(),
+                ReleaseId = releaseId,
+                S3Id = s3Id,
                 CreatedAt = DateTime.UtcNow,
                 Hash = hash,
-                Runtime = runtime
             });
             await _dbContext.SaveChangesAsync();
             return id;
@@ -115,38 +67,16 @@ public class AppFilesRepository : IAppFilesRepository
         }
     }
 
-    public async Task<Version> GetLatestVersion(string runtime)
-    {
-        var lastEntity = await _dbContext.AppFiles.Where(e => e.Runtime == runtime && e.DeletedAt == null)
-            .OrderBy(e => e.CreatedAt).LastAsync();
-        return Version.Parse(lastEntity.Version);
-    }
-
     private static AppFileRead Convert(AppFileEntity entity)
     {
         return new AppFileRead
         {
             Id = entity.Id,
+            S3Id = entity.S3Id,
             Filename = entity.Filename,
-            Runtime = entity.Runtime,
-            Version = Version.Parse(entity.Version),
             CreatedAt = entity.CreatedAt,
             DeletedAt = entity.DeletedAt,
             Hash = entity.Hash,
-        };
-    }
-
-    private static AppFileEntity Convert(AppFileRead model)
-    {
-        return new AppFileEntity
-        {
-            Id = model.Id,
-            Filename = model.Filename,
-            Runtime = model.Runtime,
-            Version = model.Version.ToString(),
-            CreatedAt = model.CreatedAt,
-            DeletedAt = model.DeletedAt,
-            Hash = model.Hash,
         };
     }
 }
