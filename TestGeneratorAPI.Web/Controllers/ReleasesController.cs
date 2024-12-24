@@ -23,7 +23,7 @@ public class ReleasesController : ControllerBase
     }
 
     [HttpPost("filter")]
-    // [Authorize(AuthenticationSchemes = "Bearer")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [ProducesResponseType(typeof(ResponseSchema<ICollection<string>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status500InternalServerError)]
@@ -34,8 +34,8 @@ public class ReleasesController : ControllerBase
         try
         {
             var user = await _tokensService.GetUser(User);
-            // if (user == null || !user.HavePermission(TokenPermission.CreateTestGeneratorRelease))
-                // return Unauthorized();
+            if (user == null || !user.HavePermission(TokenPermission.CreateTestGeneratorRelease))
+                return Unauthorized();
             var res = await _appFileService.FilterFiles(runtime, files);
 
             return Ok(new ResponseSchema<ICollection<string>>
@@ -56,7 +56,7 @@ public class ReleasesController : ControllerBase
     }
 
     [HttpPost("upload")]
-    // [Authorize(AuthenticationSchemes = "Bearer")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [RequestSizeLimit(104857600)]
     [ProducesResponseType(typeof(ResponseSchema<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
@@ -67,8 +67,8 @@ public class ReleasesController : ControllerBase
         try
         {
             var user = await _tokensService.GetUser(User);
-            // if (user == null || !user.HavePermission(TokenPermission.CreateTestGeneratorRelease))
-                // return Unauthorized();
+            if (user == null || !user.HavePermission(TokenPermission.CreateTestGeneratorRelease))
+                return Unauthorized();
 
             var res = await _appFileService.UploadReleaseZip(version, runtime, request.Zip, request.Files);
 

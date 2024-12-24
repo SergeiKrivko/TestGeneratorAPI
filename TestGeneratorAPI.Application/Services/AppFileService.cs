@@ -70,7 +70,11 @@ public class AppFileService : IAppFileService
         Console.WriteLine(string.Join("; ", files));
 
         var zipPath = Path.GetTempFileName();
-        await using (var stream = File.OpenWrite(zipPath))
+        if (File.Exists(zipPath))
+            File.Delete(zipPath);
+        if (Directory.Exists(zipPath))
+            Directory.Delete(zipPath, recursive: true);
+        await using (var stream = zipFile.OpenReadStream())
         {
             await Task.Run(() => ZipFile.ExtractToDirectory(stream, zipPath));
         }
@@ -116,11 +120,11 @@ public class AppFileService : IAppFileService
         }
         catch (Exception)
         {
-            Directory.Delete(zipPath);
+            Directory.Delete(zipPath, recursive: true);
             throw;
         }
 
-        Directory.Delete(zipPath);
+        Directory.Delete(zipPath, recursive: true);
 
         return releaseId;
     }
