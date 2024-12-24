@@ -40,7 +40,7 @@ public class AppFileService : IAppFileService
             foreach (var file in files)
             {
                 var existing = existingFiles.FirstOrDefault(e => e.Filename == file.Filename);
-                if (!string.Equals(existing?.Hash, file.Hash, StringComparison.InvariantCultureIgnoreCase))
+                if (!string.Equals(existing?.Hash, file.Hash, StringComparison.OrdinalIgnoreCase))
                     res.Add(file.Filename);
             }
 
@@ -126,7 +126,7 @@ public class AppFileService : IAppFileService
             foreach (var fileEntity in fileEntities)
             {
                 var file = files.FirstOrDefault(f => f.Filename == fileEntity.Filename);
-                if (file?.Hash == fileEntity.Hash)
+                if (string.Equals(file?.Hash.Replace("-", ""), fileEntity.Hash, StringComparison.OrdinalIgnoreCase))
                     continue;
                 Console.WriteLine($"Adding {file?.Filename}");
                 using (var stream = (await _s3Client.GetObjectAsync(MainBucket, fileEntity.Id.ToString()))
