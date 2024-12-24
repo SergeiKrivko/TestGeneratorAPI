@@ -73,7 +73,7 @@ public class AppFileService : IAppFileService
         await using (var stream = File.OpenWrite(zipPath))
         using (var zipStream = zipFile.OpenReadStream())
         {
-            await stream.CopyToAsync(zipStream);
+            await zipStream.CopyToAsync(stream);
         }
 
         await using(var zipStream = File.OpenRead(zipPath))
