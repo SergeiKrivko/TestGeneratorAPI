@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.Extensions.FileSystemGlobbing;
+using TestGeneratorAPI.Application.Types;
 using TestGeneratorAPI.Core.Abstractions;
 using TestGeneratorAPI.Core.Enums;
 using TestGeneratorAPI.Core.Exceptions.Services;
@@ -110,105 +111,24 @@ public class TokensService : ITokensService
         return _tokensRepository.Get(tokenId);
     }
 
-    public async Task<bool> CheckPermissions(ClaimsPrincipal claims, TokenPermission permission, object id)
-    {
-        try
-        {
-            if (!claims.HasClaim(c => c.Type == "TokenId"))
-                return permission.TokenTypes.Contains(TokenType.User);
-            var tokenId = Guid.Parse(claims.Claims.Single(c => c.Type == "TokenId").Value);
-            var userId = Guid.Parse(claims.Claims.Single(c => c.Type == "UserId").Value);
-            var token = await GetToken(tokenId);
-
-            if (token.UserId != userId || token.DeletedAt != null)
-                return false;
-
-            if (!token.Permissions.Contains(permission.Key) || !permission.TokenTypes.Contains(token.Type))
-                return false;
-
-            switch (token.Type)
-            {
-                case TokenType.Admin:
-                    return true;
-                case TokenType.User:
-                {
-                    if (permission.Key == "createPlugin")
-                        return true;
-                    var plugin = await _pluginsRepository.Get((Guid)id);
-                    return plugin.OwnerId == userId;
-                }
-                case TokenType.Mask:
-                {
-                    var matcher = new Matcher();
-                    matcher.AddInclude(claims.Claims.Single(c => c.Type == "Mask").Value);
-                    
-                    if (permission.Key == "createPlugin")
-                    {
-                        return matcher.Match((string)id).HasMatches;
-                    }
-                    if (permission.Key != "createRelease" &&
-                        permission.Key != "removeRelease" && permission.Key != "removePlugin")
-                        return false;
-                    
-                    var plugin = await _pluginsRepository.Get((Guid)id);
-                    if (plugin.OwnerId != userId)
-                        return false;
-                    return matcher.Match(plugin.Key).HasMatches;
-                }
-                case TokenType.Plugins:
-                {
-                    if (permission.Key != "createRelease" && permission.Key != "removeRelease" &&
-                        permission.Key != "removePlugin")
-                        return false;
-                    var plugin = await _pluginsRepository.Get((Guid)id);
-                    if (plugin.OwnerId != userId)
-                        return false;
-                    var pluginIds = claims.Claims.Single(c => c.Type == "Plugins").Value.Split(';').Select(Guid.Parse);
-                    return pluginIds.Contains(plugin.PluginId);
-                }
-                default:
-                    return false;
-            }
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-    }
-
-    public async Task<AuthorizedUserRead?> GetUser(ClaimsPrincipal claims)
+    public async Task<IUser?> GetUser(ClaimsPrincipal claims)
     {
         try
         {
             if (claims.HasClaim(c => c.Type == "UserId"))
             {
-                return await _usersRepository.Get(Guid.Parse(claims.Claims.Single(c => c.Type == "UserId").Value));
+                var token = await _tokensRepository.Get(Guid.Parse(claims.Claims.Single(c => c.Type == "TokenId").Value));
+                return new AuthWithTokenUser(token, claims);
             }
 
             if (claims.Identity?.Name == null)
                 return null;
 
-            return await _usersRepository.GetLastByLogin(claims.Identity.Name);
+            return new AuthWithPasswordUser((await _usersRepository.GetLastByLogin(claims.Identity.Name)).UserId);
         }
         catch (Exception)
         {
             return null;
         }
-    }
-
-    public async Task<AuthorizedUserRead?> GetUser(ClaimsPrincipal claims, TokenPermission permission, object id)
-    {
-        var user = await GetUser(claims);
-        if (user == null || !await CheckPermissions(claims, permission, id))
-            return null;
-        return user;
-    }
-
-    public async Task<AuthorizedUserRead?> GetUser(ClaimsPrincipal claims, TokenPermission permission)
-    {
-        var user = await GetUser(claims);
-        if (user == null || !await CheckPermissions(claims, permission, user.UserId))
-            return null;
-        return user;
     }
 }

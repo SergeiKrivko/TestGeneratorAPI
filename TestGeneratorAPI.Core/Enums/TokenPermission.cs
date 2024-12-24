@@ -47,4 +47,7 @@ public class TokenPermission
         Key = "createUser", Description = "Создание новых пользователей",
         TokenTypes = [TokenType.Admin]
     };
+
+    public static TokenPermission[] All { get; } =
+        [UpdateUser, CreatePlugin, RemovePlugin, CreateRelease, RemoveRelease, CreateTestGeneratorRelease, CreateUser];
 }

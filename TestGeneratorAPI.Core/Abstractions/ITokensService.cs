@@ -15,10 +15,6 @@ public interface ITokensService
     public Task<TokenRead> GetToken(Guid tokenId);
 
     public Task<Guid> DeleteToken(Guid tokenId);
-
-    public Task<bool> CheckPermissions(ClaimsPrincipal claims, TokenPermission permission, object id);
     
-    public Task<AuthorizedUserRead?> GetUser(ClaimsPrincipal claims);
-    public Task<AuthorizedUserRead?> GetUser(ClaimsPrincipal claims, TokenPermission permission, object id);
-    public Task<AuthorizedUserRead?> GetUser(ClaimsPrincipal claims, TokenPermission permission);
+    public Task<IUser?> GetUser(ClaimsPrincipal claims);
 }

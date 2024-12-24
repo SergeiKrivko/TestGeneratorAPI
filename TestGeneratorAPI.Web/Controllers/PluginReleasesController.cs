@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TestGeneratorAPI.Core.Abstractions;
@@ -14,15 +13,13 @@ namespace TestGeneratorAPI.Web.Controllers;
 public class PluginReleasesController : ControllerBase
 {
     private readonly IPluginReleasesService _pluginReleasesService;
-    private readonly IUsersService _usersService;
     private readonly IPluginsService _pluginsService;
     private readonly ITokensService _tokensService;
 
     public PluginReleasesController(IPluginReleasesService pluginReleasesService, IPluginsService pluginsService,
-        IUsersService usersService, ITokensService tokensService)
+        ITokensService tokensService)
     {
         _pluginReleasesService = pluginReleasesService;
-        _usersService = usersService;
         _pluginsService = pluginsService;
         _tokensService = tokensService;
     }
@@ -39,25 +36,23 @@ public class PluginReleasesController : ControllerBase
         try
         {
             PluginRead plugin;
-            AuthorizedUserRead? user;
+            var user = await _tokensService.GetUser(User);
             try
             {
                 plugin = await _pluginsService.GetPluginByKey(request.Key);
-                user = await _tokensService.GetUser(User, TokenPermission.CreateRelease, plugin.PluginId);
-                if (user == null)
+                if (user == null || !user.HavePermission(TokenPermission.CreateRelease) || !user.HavePlugin(plugin))
                 {
-                    return StatusCode(StatusCodes.Status401Unauthorized, new { error = "Permission denied" });
+                    return Unauthorized(new { error = "Permission denied" });
                 }
             }
             catch (Exception)
             {
-                user = await _tokensService.GetUser(User, TokenPermission.CreatePlugin, request.Key);
-                if (user == null)
+                if (user == null || !user.HavePermission(TokenPermission.CreatePlugin) || !user.HavePlugin(request.Key))
                 {
-                    return StatusCode(StatusCodes.Status401Unauthorized, new { error = "Permission denied" });
+                    return Unauthorized(new { error = "Permission denied" });
                 }
 
-                var newPluginId = await _pluginsService.CreatePlugin(new PluginCreate { Key = request.Key }, user.UserId);
+                var newPluginId = await _pluginsService.CreatePlugin(new PluginCreate { Key = request.Key }, user.Id);
                 plugin = await _pluginsService.GetPlugin(newPluginId);
             }
 

@@ -33,9 +33,8 @@ public class ReleasesController : ControllerBase
         Console.WriteLine("POST api/v2/releases");
         try
         {
-            var user = await _tokensService.GetUser(User, TokenPermission.CreateTestGeneratorRelease);
-            Console.WriteLine($"UserId = {user?.UserId}");
-            if (user == null)
+            var user = await _tokensService.GetUser(User);
+            if (user == null || !user.HavePermission(TokenPermission.CreateTestGeneratorRelease))
                 return Unauthorized();
             var res = await _appFileService.UploadFile(file.FileName, version, runtime, file);
 

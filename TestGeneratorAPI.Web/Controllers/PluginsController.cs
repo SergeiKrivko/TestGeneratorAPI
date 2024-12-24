@@ -32,10 +32,10 @@ public class PluginsController : ControllerBase
     {
         try
         {
-            var user = await _tokensService.GetUser(User, TokenPermission.CreatePlugin, request.Key);
-            if (user == null)
+            var user = await _tokensService.GetUser(User);
+            if (user == null || !user.HavePermission(TokenPermission.CreatePlugin) || !user.HavePlugin(request.Key))
                 return Unauthorized();
-            var id = await _pluginsService.CreatePlugin(request, user.UserId);
+            var id = await _pluginsService.CreatePlugin(request, user.Id);
 
             return Ok(new ResponseSchema<Guid>
             {
@@ -101,7 +101,7 @@ public class PluginsController : ControllerBase
             {
                 return Unauthorized();
             }
-            var plugins = await _pluginsService.GetUserPlugins(user.UserId);
+            var plugins = await _pluginsService.GetUserPlugins(user.Id);
 
             return Ok(new ResponseSchema<PluginRead[]>
             {

@@ -31,8 +31,8 @@ public class UsersController : ControllerBase
     {
         try
         {
-            var user = await _tokensService.GetUser(User, TokenPermission.CreateUser);
-            if (user == null)
+            var user = await _tokensService.GetUser(User);
+            if (user == null || !user.HavePermission(TokenPermission.CreateUser))
                 return Unauthorized();
             
             var id = await _usersService.CreateUser(request);

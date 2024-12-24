@@ -37,11 +37,11 @@ public class TokensController : ControllerBase
                 return StatusCode(StatusCodes.Status401Unauthorized,
                     new { error = "Permission denied: can not create admin token here" });
             
-            var user = await _tokensService.GetUser(User, TokenPermission.UpdateUser);
-            if (user == null)
+            var user = await _tokensService.GetUser(User);
+            if (user == null || !user.HavePermission(TokenPermission.UpdateUser))
                 return Unauthorized();
 
-            var token = await _tokensService.CreateToken(request, user.UserId);
+            var token = await _tokensService.CreateToken(request, user.Id);
 
             return Ok(new ResponseSchema<string>
             {
@@ -73,7 +73,7 @@ public class TokensController : ControllerBase
             if (user == null)
                 return Unauthorized();
 
-            var tokens = await _tokensService.GetTokensOfUser(user.UserId);
+            var tokens = await _tokensService.GetTokensOfUser(user.Id);
 
             return Ok(new ResponseSchema<List<TokenRead>>
             {
@@ -134,12 +134,12 @@ public class TokensController : ControllerBase
     {
         try
         {
-            var user = await _tokensService.GetUser(User, TokenPermission.UpdateUser);
-            if (user == null)
+            var user = await _tokensService.GetUser(User);
+            if (user == null || !user.HavePermission(TokenPermission.UpdateUser))
                 return Unauthorized();
 
             var token = await _tokensService.GetToken(tokenId);
-            if (token.UserId != user.UserId)
+            if (token.UserId != user.Id)
                 return StatusCode(StatusCodes.Status401Unauthorized);
 
             await _tokensService.DeleteToken(tokenId);
