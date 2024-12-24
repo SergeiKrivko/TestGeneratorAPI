@@ -66,23 +66,21 @@ public class AppFileService : IAppFileService
         }
 
         await _releaseRepository.CreateRelease(releaseId, runtime, version);
-        
+
         Console.WriteLine(string.Join("; ", files));
 
-        var zipPath = Path.GetTempFileName() + ".zip";
+        var zipPath = Path.GetTempFileName();
         await using (var stream = File.OpenWrite(zipPath))
-        using (var zipStream = zipFile.OpenReadStream())
         {
-            await zipStream.CopyToAsync(stream);
+            await Task.Run(() => ZipFile.ExtractToDirectory(stream, zipPath));
         }
 
-        await using(var zipStream = File.OpenRead(zipPath))
-        using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Read))
+        try
         {
             foreach (var filename in files)
             {
-                var entry = zipArchive.GetEntry(filename);
-                if (entry == null)
+                var entryPath = Path.Join(zipPath, filename);
+                if (!File.Exists(entryPath))
                 {
                     var existing = existingFiles.First(e => e.Filename == filename);
                     await _appFilesRepository.Create(Guid.NewGuid(), releaseId, existing.S3Id, filename, existing.Hash);
@@ -90,16 +88,16 @@ public class AppFileService : IAppFileService
                 else
                 {
                     string hash;
-                    await using (var fileStream = entry.Open())
+                    await using (var fileStream = File.OpenRead(entryPath))
                     using (var sha256 = SHA256.Create())
                     {
                         var hashBytes = await sha256.ComputeHashAsync(fileStream);
                         hash = BitConverter.ToString(hashBytes).Replace("-", "");
                     }
-                    
+
                     var s3Id = Guid.NewGuid();
 
-                    await using (var stream = entry.Open())
+                    await using (var stream = File.OpenRead(entryPath))
                     {
                         var putRequest = new PutObjectRequest
                         {
@@ -108,16 +106,21 @@ public class AppFileService : IAppFileService
                             InputStream = stream,
                             ContentType = "application/octet-stream"
                         };
-                    
+
                         await _s3Client.PutObjectAsync(putRequest);
                     }
 
-                    await _appFilesRepository.Create(Guid.NewGuid(), releaseId, s3Id, entry.FullName, hash);
+                    await _appFilesRepository.Create(Guid.NewGuid(), releaseId, s3Id, filename, hash);
                 }
             }
         }
-        
-        File.Delete(zipPath);
+        catch (Exception)
+        {
+            Directory.Delete(zipPath);
+            throw;
+        }
+
+        Directory.Delete(zipPath);
 
         return releaseId;
     }
