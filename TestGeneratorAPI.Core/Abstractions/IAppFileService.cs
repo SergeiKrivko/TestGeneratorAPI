@@ -8,7 +8,7 @@ public interface IAppFileService
     public Task<List<string>> FilterFiles(string runtime, ICollection<AppFileDownload> files);
     public Task<Guid> UploadReleaseZip(Version version, string runtime, IFormFile stream, string[] files);
 
-    public Task<string> CreateReleaseZip(AppFileDownload[] files, string runtime);
+    public Task<ReleaseZipRead> CreateReleaseZip(AppFileDownload[] files, string runtime);
 
     public Task<Version> GetLatestVersion(string runtime);
 }

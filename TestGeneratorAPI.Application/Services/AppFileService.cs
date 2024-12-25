@@ -129,7 +129,7 @@ public class AppFileService : IAppFileService
         return releaseId;
     }
 
-    public async Task<string> CreateReleaseZip(AppFileDownload[] files, string runtime)
+    public async Task<ReleaseZipRead> CreateReleaseZip(AppFileDownload[] files, string runtime)
     {
         var zipFilePath = Path.GetTempFileName() + ".zip"; // Создаем временный файл
 
@@ -145,7 +145,7 @@ public class AppFileService : IAppFileService
                 if (string.Equals(file?.Hash.Replace("-", ""), fileEntity.Hash, StringComparison.OrdinalIgnoreCase))
                     continue;
                 Console.WriteLine($"Adding {file?.Filename}");
-                using (var stream = (await _s3Client.GetObjectAsync(MainBucket, fileEntity.Id.ToString()))
+                using (var stream = (await _s3Client.GetObjectAsync(MainBucket, fileEntity.S3Id.ToString()))
                        .ResponseStream)
                 {
                     var zipEntry = zipArchive.CreateEntry(fileEntity.Filename, CompressionLevel.Optimal);
@@ -179,7 +179,7 @@ public class AppFileService : IAppFileService
             Key = zipId.ToString(),
             Expires = DateTime.UtcNow.AddHours(1)
         };
-        return await _s3Client.GetPreSignedURLAsync(request);
+        return new ReleaseZipRead { Url = await _s3Client.GetPreSignedURLAsync(request) };
     }
 
     public async Task<Version> GetLatestVersion(string runtime)

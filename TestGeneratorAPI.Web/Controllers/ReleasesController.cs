@@ -90,17 +90,17 @@ public class ReleasesController : ControllerBase
     }
 
     [HttpPost("download")]
-    [ProducesResponseType(typeof(ResponseSchema<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ResponseSchema<ReleaseZipRead>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ResponseSchema<string>>> DownloadRelease([FromBody] AppFileDownload[] files,
+    public async Task<ActionResult<ResponseSchema<ReleaseZipRead>>> DownloadRelease([FromBody] AppFileDownload[] files,
         [FromQuery, Required] string runtime)
     {
         try
         {
             var res = await _appFileService.CreateReleaseZip(files, runtime);
 
-            return Ok(new ResponseSchema<string>
+            return Ok(new ResponseSchema<ReleaseZipRead>
             {
                 Data = res,
                 Detail = "Release assets were uploaded."
