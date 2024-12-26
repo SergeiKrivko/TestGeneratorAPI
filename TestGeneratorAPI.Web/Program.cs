@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Prometheus;
 using TestGeneratorAPI.Application.Services;
 using TestGeneratorAPI.Core.Abstractions;
 using TestGeneratorAPI.DataAccess.Context;
@@ -97,6 +98,8 @@ app.UseCors(policy =>
         .AllowAnyMethod()
         .AllowAnyHeader();
 });
+
+app.MapMetrics(registry: new CollectorRegistry());
 
 using var scope = app.Services.CreateScope();
 await using var dbContext = scope.ServiceProvider.GetRequiredService<TestGeneratorDbContext>();

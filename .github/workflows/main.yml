@@ -38,3 +38,11 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          
+      - name: Deploy
+        run: |
+          curl -X 'POST' \
+            'https://deploy-api.nachert.art/api/v1/stacks/testgenerator/deployments' \
+            -H 'accept: application/json' \
+            -H 'Authorization: Basic ${{ secrets.DEPLOY_API_CREDENTIALS }}' \
+            -d ''
