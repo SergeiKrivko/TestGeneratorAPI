@@ -99,6 +99,7 @@ app.UseCors(policy =>
         .AllowAnyHeader();
 });
 
+app.UseHttpMetrics();
 app.MapMetrics();
 
 using var scope = app.Services.CreateScope();
