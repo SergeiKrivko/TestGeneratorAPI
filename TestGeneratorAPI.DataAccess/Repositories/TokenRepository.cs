@@ -11,13 +11,14 @@ namespace TestGeneratorAPI.DataAccess.Repositories;
 public class TokensRepository : ITokensRepository
 {
     private readonly TestGeneratorDbContext _dbContext;
-    
+
     public TokensRepository(TestGeneratorDbContext dbContext)
     {
         _dbContext = dbContext;
     }
-    
-    public async Task<Guid> Create(Guid id, Guid userId, TokenType type, string name, DateTime expiresAt, string[] permissions) 
+
+    public async Task<Guid> Create(Guid id, Guid userId, TokenType type, string name, DateTime expiresAt,
+        string[] permissions)
     {
         try
         {
@@ -30,8 +31,8 @@ public class TokensRepository : ITokensRepository
                 ExpiresAt = expiresAt,
                 Permissions = permissions,
             };
-            
-            await _dbContext.Tokens.AddAsync(entity); 
+
+            await PrometheusRepositoryHistogram.Measure(_dbContext.Tokens.AddAsync(entity));
             await _dbContext.SaveChangesAsync();
 
             return id;
@@ -46,7 +47,9 @@ public class TokensRepository : ITokensRepository
     {
         try
         {
-            var entity = await _dbContext.Tokens.Where(e => e.TokenId == tokenId).SingleAsync();
+            var entity =
+                await PrometheusRepositoryHistogram.Measure(_dbContext.Tokens.Where(e => e.TokenId == tokenId)
+                    .SingleAsync());
             return Convert(entity);
         }
         catch (Exception e)
@@ -72,14 +75,15 @@ public class TokensRepository : ITokensRepository
 
     public Task<List<TokenRead>> GetAll(Guid userId)
     {
-        return _dbContext.Tokens.Where(t => t.UserId == userId && t.DeletedAt == null).Select(e => Convert(e)).ToListAsync();
+        return PrometheusRepositoryHistogram.Measure(_dbContext.Tokens
+            .Where(t => t.UserId == userId && t.DeletedAt == null).Select(e => Convert(e))
+            .ToListAsync());
     }
 
     public async Task<Guid> Delete(Guid tokenId)
     {
-        var entity = await _dbContext.Tokens.Where(t => t.TokenId == tokenId).SingleAsync();
-        entity.DeletedAt = DateTime.UtcNow;
-        _dbContext.Tokens.Update(entity);
+        await PrometheusRepositoryHistogram.Measure(_dbContext.Tokens.Where(e => e.TokenId == tokenId)
+            .ExecuteUpdateAsync(c => c.SetProperty(t => t.DeletedAt, DateTime.UtcNow)));
         await _dbContext.SaveChangesAsync();
         return tokenId;
     }

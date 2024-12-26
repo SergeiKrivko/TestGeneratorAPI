@@ -20,8 +20,8 @@ public class PluginReleasesRepository : IPluginReleasesRepository
     {
         try
         {
-            var entity = await _dbContext.PluginReleases
-                .Where(p => p.PluginReleaseId == pluginId && p.DeletedAt == null).SingleAsync();
+            var entity = await PrometheusRepositoryHistogram.Measure(_dbContext.PluginReleases
+                .Where(p => p.PluginReleaseId == pluginId && p.DeletedAt == null).SingleAsync());
             return Convert(entity);
         }
         catch (Exception e)
@@ -34,10 +34,10 @@ public class PluginReleasesRepository : IPluginReleasesRepository
     {
         try
         {
-            var entity = await _dbContext.PluginReleases
+            var entity = await PrometheusRepositoryHistogram.Measure(_dbContext.PluginReleases
                 .Where(e => e.PluginId == pluginId && (e.Runtime == runtime || e.Runtime == null) &&
                             e.DeletedAt == null)
-                .OrderBy(p => p.Version).LastAsync();
+                .OrderBy(p => p.Version).LastAsync());
             return Convert(entity);
         }
         catch (Exception e)
@@ -50,9 +50,10 @@ public class PluginReleasesRepository : IPluginReleasesRepository
     {
         try
         {
-            return await _dbContext.PluginReleases.Where(e => e.PluginId == pluginId && e.DeletedAt == null)
+            return await PrometheusRepositoryHistogram.Measure(_dbContext.PluginReleases
+                .Where(e => e.PluginId == pluginId && e.DeletedAt == null)
                 .Select(e => Convert(e))
-                .ToListAsync();
+                .ToListAsync());
         }
         catch (Exception e)
         {
@@ -64,10 +65,10 @@ public class PluginReleasesRepository : IPluginReleasesRepository
     {
         try
         {
-            return await _dbContext.PluginReleases
+            return await PrometheusRepositoryHistogram.Measure(_dbContext.PluginReleases
                 .Where(e => e.PluginId == pluginId && e.Runtime == runtime && e.DeletedAt == null)
                 .Select(e => Convert(e))
-                .ToListAsync();
+                .ToListAsync());
         }
         catch (Exception e)
         {
@@ -91,7 +92,7 @@ public class PluginReleasesRepository : IPluginReleasesRepository
                 Runtime = runtime,
                 Url = url,
             };
-            await _dbContext.PluginReleases.AddAsync(entity);
+            await PrometheusRepositoryHistogram.Measure(_dbContext.PluginReleases.AddAsync(entity));
             await _dbContext.SaveChangesAsync();
             return id;
         }
@@ -105,15 +106,16 @@ public class PluginReleasesRepository : IPluginReleasesRepository
     {
         try
         {
-            var entity = await _dbContext.PluginReleases
+            var entity = await PrometheusRepositoryHistogram.Measure(_dbContext.PluginReleases
                 .Where(e => e.PluginId == pluginId && (e.Runtime == runtime || e.Runtime == null) &&
                             e.DeletedAt == null && e.Version == version.ToString())
-                .OrderBy(p => p.Runtime).LastAsync();
+                .OrderBy(p => p.Runtime).LastAsync());
             return Convert(entity);
         }
         catch (Exception e)
         {
-            throw new PluginReleasesRepositoryException($"Failed to get release '{version}' of plugin {pluginId} {e}", e);
+            throw new PluginReleasesRepositoryException($"Failed to get release '{version}' of plugin {pluginId} {e}",
+                e);
         }
     }
 
@@ -121,10 +123,10 @@ public class PluginReleasesRepository : IPluginReleasesRepository
     {
         try
         {
-            var entity = await _dbContext.PluginReleases
+            await PrometheusRepositoryHistogram.Measure(_dbContext.PluginReleases
                 .Where(e => e.PluginId == pluginId && (e.Runtime == runtime) &&
                             e.DeletedAt == null && e.Version == version.ToString())
-                .OrderBy(p => p.Runtime).LastAsync();
+                .OrderBy(p => p.Runtime).LastAsync());
             return true;
         }
         catch (Exception e)
@@ -137,8 +139,8 @@ public class PluginReleasesRepository : IPluginReleasesRepository
     {
         try
         {
-            await _dbContext.PluginReleases.Where(p => p.PluginReleaseId == id)
-                .ExecuteUpdateAsync(s => s.SetProperty(p => p.DeletedAt, DateTime.UtcNow));
+            await PrometheusRepositoryHistogram.Measure(_dbContext.PluginReleases.Where(p => p.PluginReleaseId == id)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.DeletedAt, DateTime.UtcNow)));
             await _dbContext.SaveChangesAsync();
             return id;
         }

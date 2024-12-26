@@ -53,7 +53,13 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddDbContext<TestGeneratorDbContext>(
-    options => options.UseNpgsql(Environment.GetEnvironmentVariable("DB_CONTEXT")));
+    options =>
+    {
+        options.UseNpgsql(Environment.GetEnvironmentVariable("DB_CONTEXT"));
+        options.AddInterceptors(new PrometheusInterceptor());
+    });
+
+builder.Services.AddTransient<PrometheusInterceptor>();  // Регистрируем интерсептор
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

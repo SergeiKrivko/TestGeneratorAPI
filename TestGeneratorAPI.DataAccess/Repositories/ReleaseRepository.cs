@@ -9,7 +9,7 @@ namespace TestGeneratorAPI.DataAccess.Repositories;
 public class ReleaseRepository : IReleaseRepository
 {
     private readonly TestGeneratorDbContext _dbContext;
-    
+
     public ReleaseRepository(TestGeneratorDbContext dbContext)
     {
         _dbContext = dbContext;
@@ -17,30 +17,37 @@ public class ReleaseRepository : IReleaseRepository
 
     public async Task<ReleaseRead> Get(Guid releaseId)
     {
-        return Convert(await _dbContext.Releases.Where(e => e.ReleaseId == releaseId).SingleAsync());
+        return Convert(
+            await PrometheusRepositoryHistogram.Measure(_dbContext.Releases
+                .Where(e => e.ReleaseId == releaseId)
+                .SingleAsync()));
     }
 
     public async Task<ReleaseRead> GetLatest()
     {
-        return Convert(await _dbContext.Releases.OrderByDescending(e => e.CreatedAt).FirstAsync());
+        return Convert(
+            await PrometheusRepositoryHistogram.Measure(_dbContext.Releases
+                .OrderByDescending(e => e.CreatedAt)
+                .FirstAsync()));
     }
 
     public async Task<ReleaseRead> GetLatest(string runtime)
     {
-        return Convert(await _dbContext.Releases
+        return Convert(await PrometheusRepositoryHistogram.Measure(_dbContext.Releases
             .Where(e => e.Runtime == runtime)
             .OrderByDescending(e => e.CreatedAt)
-            .FirstAsync());
+            .FirstAsync()));
     }
 
     public async Task<Guid> CreateRelease(Guid id, string runtime, Version version)
     {
-        await _dbContext.Releases.AddAsync(new ReleaseEntity
-        {
-            ReleaseId = id,
-            Runtime = runtime,
-            Version = version.ToString()
-        });
+        await PrometheusRepositoryHistogram.Measure(_dbContext.Releases
+            .AddAsync(new ReleaseEntity
+            {
+                ReleaseId = id,
+                Runtime = runtime,
+                Version = version.ToString()
+            }));
         await _dbContext.SaveChangesAsync();
         return id;
     }

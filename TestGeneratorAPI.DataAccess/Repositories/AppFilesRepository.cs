@@ -20,8 +20,8 @@ public class AppFilesRepository : IAppFilesRepository
     {
         try
         {
-            var entity = await _dbContext.AppFiles
-                .Where(p => p.Id == id && p.DeletedAt == null).SingleAsync();
+            var entity = await PrometheusRepositoryHistogram.Measure(_dbContext.AppFiles
+                .Where(p => p.Id == id && p.DeletedAt == null).SingleAsync());
             return Convert(entity);
         }
         catch (Exception e)
@@ -34,10 +34,10 @@ public class AppFilesRepository : IAppFilesRepository
     {
         try
         {
-            return await _dbContext.AppFiles
+            return await PrometheusRepositoryHistogram.Measure(_dbContext.AppFiles
                 .Where(e => e.ReleaseId == releaseId && e.DeletedAt == null)
                 .Select(e => Convert(e))
-                .ToListAsync();
+                .ToListAsync());
         }
         catch (Exception e)
         {
@@ -49,7 +49,7 @@ public class AppFilesRepository : IAppFilesRepository
     {
         try
         {
-            await _dbContext.AppFiles.AddAsync(new AppFileEntity
+            await PrometheusRepositoryHistogram.Measure(_dbContext.AppFiles.AddAsync(new AppFileEntity
             {
                 Id = id,
                 Filename = filename,
@@ -57,7 +57,7 @@ public class AppFilesRepository : IAppFilesRepository
                 S3Id = s3Id,
                 CreatedAt = DateTime.UtcNow,
                 Hash = hash,
-            });
+            }));
             await _dbContext.SaveChangesAsync();
             return id;
         }

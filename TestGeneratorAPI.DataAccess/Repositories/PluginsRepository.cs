@@ -20,7 +20,8 @@ public class PluginsRepository : IPluginsRepository
     {
         try
         {
-            var entity = await _dbContext.Plugins.Where(p => p.PluginId == pluginId && p.DeletedAt == null).SingleAsync();
+            var entity = await PrometheusRepositoryHistogram.Measure(_dbContext.Plugins
+                .Where(p => p.PluginId == pluginId && p.DeletedAt == null).SingleAsync());
             return Convert(entity);
         }
         catch (Exception e)
@@ -33,7 +34,8 @@ public class PluginsRepository : IPluginsRepository
     {
         try
         {
-            var entity = await _dbContext.Plugins.Where(p => p.Key == key && p.DeletedAt == null).SingleAsync();
+            var entity = await PrometheusRepositoryHistogram.Measure(_dbContext.Plugins
+                .Where(p => p.Key == key && p.DeletedAt == null).SingleAsync());
             return Convert(entity);
         }
         catch (Exception e)
@@ -46,7 +48,8 @@ public class PluginsRepository : IPluginsRepository
     {
         try
         {
-            return await _dbContext.Plugins.Where(p => p.Key == key && p.DeletedAt == null).AnyAsync();
+            return await PrometheusRepositoryHistogram.Measure(_dbContext.Plugins
+                .Where(p => p.Key == key && p.DeletedAt == null).AnyAsync());
         }
         catch (Exception e)
         {
@@ -58,7 +61,8 @@ public class PluginsRepository : IPluginsRepository
     {
         try
         {
-            return await _dbContext.Plugins.Where(e => e.DeletedAt == null).Select(e => Convert(e)).ToListAsync();
+            return await PrometheusRepositoryHistogram.Measure(_dbContext.Plugins.Where(e => e.DeletedAt == null)
+                .Select(e => Convert(e)).ToListAsync());
         }
         catch (Exception e)
         {
@@ -70,7 +74,9 @@ public class PluginsRepository : IPluginsRepository
     {
         try
         {
-            return await _dbContext.Plugins.Where(e => e.OwnerId == userId && e.DeletedAt == null).Select(e => Convert(e)).ToListAsync();
+            return await PrometheusRepositoryHistogram.Measure(_dbContext.Plugins
+                .Where(e => e.OwnerId == userId && e.DeletedAt == null)
+                .Select(e => Convert(e)).ToListAsync());
         }
         catch (Exception e)
         {
@@ -82,8 +88,9 @@ public class PluginsRepository : IPluginsRepository
     {
         try
         {
-            return await _dbContext.Plugins.Where(e => e.OwnerId == userId && e.DeletedAt == null && keys.Contains(e.Key))
-                .Select(e => e.PluginId).ToListAsync();
+            return await PrometheusRepositoryHistogram.Measure(_dbContext.Plugins
+                .Where(e => e.OwnerId == userId && e.DeletedAt == null && keys.Contains(e.Key))
+                .Select(e => e.PluginId).ToListAsync());
         }
         catch (Exception e)
         {
@@ -101,7 +108,7 @@ public class PluginsRepository : IPluginsRepository
                 OwnerId = ownerId,
                 Key = key,
             };
-            await _dbContext.Plugins.AddAsync(entity);
+            await PrometheusRepositoryHistogram.Measure(_dbContext.Plugins.AddAsync(entity));
             await _dbContext.SaveChangesAsync();
             return id;
         }
@@ -115,8 +122,8 @@ public class PluginsRepository : IPluginsRepository
     {
         try
         {
-            await _dbContext.Plugins.Where(p => p.PluginId == id)
-                .ExecuteUpdateAsync(s => s.SetProperty(p => p.DeletedAt, DateTime.UtcNow));
+            await PrometheusRepositoryHistogram.Measure(_dbContext.Plugins.Where(p => p.PluginId == id)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.DeletedAt, DateTime.UtcNow)));
             await _dbContext.SaveChangesAsync();
             return id;
         }

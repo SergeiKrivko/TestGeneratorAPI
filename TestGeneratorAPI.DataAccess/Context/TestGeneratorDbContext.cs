@@ -10,7 +10,7 @@ public class TestGeneratorDbContext : DbContext
         : base(options)
     {
     }
-    
+
     public DbSet<UserEntity> Users { get; init; }
     public DbSet<TokenEntity> Tokens { get; init; }
     public DbSet<PluginEntity> Plugins { get; init; }
@@ -21,7 +21,7 @@ public class TestGeneratorDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
+
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new TokenConfiguration());
         modelBuilder.ApplyConfiguration(new PluginConfiguration());
