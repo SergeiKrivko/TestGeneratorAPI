@@ -99,7 +99,7 @@ app.UseCors(policy =>
         .AllowAnyHeader();
 });
 
-app.MapMetrics(registry: new CollectorRegistry());
+app.MapMetrics();
 
 using var scope = app.Services.CreateScope();
 await using var dbContext = scope.ServiceProvider.GetRequiredService<TestGeneratorDbContext>();
