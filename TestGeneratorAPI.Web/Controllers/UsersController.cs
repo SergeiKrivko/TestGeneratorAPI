@@ -53,4 +53,15 @@ public class UsersController : ControllerBase
                 new { error = "Error in method CreateUser", details = ex.Message });
         }
     }
+
+    [HttpGet("guid")]
+    public async Task<ActionResult<ResponseSchema<Guid>>> GetId()
+    {
+        await Task.Delay(30000);
+        return Ok(new ResponseSchema<Guid>
+        {
+            Data = Guid.NewGuid(),
+            Detail = "User was created."
+        });
+    }
 }
