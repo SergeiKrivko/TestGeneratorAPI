@@ -1,12 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using TestGeneratorAPI.Core.Abstractions;
-using TestGeneratorAPI.Core.Enums;
-using TestGeneratorAPI.Core.Models;
 using TestGeneratorAPI.Web.Schemas;
 
 namespace TestGeneratorAPI.Web.Controllers;
@@ -36,7 +32,7 @@ public class LogsController : ControllerBase
             {
                 var inputFile = new InputFileStream(new MemoryStream(Encoding.UTF8.GetBytes(logs)), "logs.txt");
                 await _telegramBot.SendDocument(chatId, inputFile,
-                    caption: $"У кого-то упал TestGenerator:\n\n{GetFatalDescription(logs)}\n");
+                    caption: $"У кого-то упал TestGenerator:\n`{GetFatalDescription(logs)}`");
             }
 
             return Ok(new ResponseSchema<DateTime>
