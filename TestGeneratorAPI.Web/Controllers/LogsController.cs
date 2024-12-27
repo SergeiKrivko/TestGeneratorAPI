@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using TestGeneratorAPI.Web.Schemas;
 
 namespace TestGeneratorAPI.Web.Controllers;
@@ -32,7 +33,7 @@ public class LogsController : ControllerBase
             {
                 var inputFile = new InputFileStream(new MemoryStream(Encoding.UTF8.GetBytes(logs)), "logs.txt");
                 await _telegramBot.SendDocument(chatId, inputFile,
-                    caption: $"У кого-то упал TestGenerator:\n`{GetFatalDescription(logs)}`");
+                    caption: $"У кого-то упал TestGenerator:\n`{GetFatalDescription(logs)}`", ParseMode.Markdown);
             }
 
             return Ok(new ResponseSchema<DateTime>
@@ -49,7 +50,7 @@ public class LogsController : ControllerBase
 
     private static string? GetFatalDescription(string logs)
     {
-        var fatalIndex = logs.IndexOf("FATAL]", StringComparison.InvariantCulture);
+        var fatalIndex = logs.IndexOf("FATAL]", StringComparison.InvariantCulture) + 7;
         if (fatalIndex < 0)
             return null;
         var endlIndex = logs.IndexOf('\n', fatalIndex);
