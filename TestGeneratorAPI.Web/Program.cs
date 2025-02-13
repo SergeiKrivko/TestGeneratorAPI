@@ -119,4 +119,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.Map("/healthz", () => "Healthy");
+
 app.Run();
